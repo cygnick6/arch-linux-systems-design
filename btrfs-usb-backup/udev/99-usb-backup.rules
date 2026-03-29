@@ -1,0 +1,1 @@
+ACTION=="add", ENV{ID_FS_UUID}=="", ENV{ID_FS_USAGE}=="filesystem", TAG+="systemd", ENV{SYSTEMD_WANTS}="usb-backup.service"

@@ -1,0 +1,10 @@
+[Unit]
+Description=usb-backup-reminder.service
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/usb-backup/usb-backup-reminder.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=usb-backup
