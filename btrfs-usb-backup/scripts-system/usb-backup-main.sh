@@ -698,6 +698,10 @@ if [[ "$PRUNE_PAIRED" == "true" ]]; then
 
     log "Finished paired pruning"
 
+else
+
+    log "Skipping paired pruning"
+
 fi
 
 if [[ "$PRUNE_UNPAIRED" == "true" ]]; then
@@ -715,6 +719,10 @@ if [[ "$PRUNE_UNPAIRED" == "true" ]]; then
                    "$MAX_HOME_UNPAIRED_SNAPS"
 
     log "Finished unpaired pruning"
+
+else
+
+    log "Skipping unpaired pruning"
 
 fi
 
