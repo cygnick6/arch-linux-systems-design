@@ -33,8 +33,8 @@
 #   'backup-in-progress'
 #
 ## FLAG FILE CONTEXT: 'scrub-in-progress' ##
-# - Both this script (usb-backup-main.sh) and usb-scrub-now.sh automatically create
-#       and remove the flag file 'scrub-in-progress'
+# - Both this script (usb-backup-main.sh) and usb-scrub-now.sh automatically
+#       create and remove the flag file 'scrub-in-progress'
 #
 ## EXECUTION CONTEXT ##
 # - A udev rule, configured with the UUID of the target Btrfs-formatted USB
@@ -268,7 +268,8 @@ find_parent_snapshot() {
 
 log "Initializing @ transmission: $_SNAPSHOT_NAME"
 
-_ROOT_PARENT=$(find_parent_snapshot "$LOCAL_ROOT_SNAP_DIR" "$DEST_ROOT_SNAP_DIR")
+_ROOT_PARENT=$(find_parent_snapshot \
+    "$LOCAL_ROOT_SNAP_DIR" "$DEST_ROOT_SNAP_DIR")
 
 if [[ -n "$_ROOT_PARENT" ]]; then
 
@@ -357,7 +358,8 @@ log "@ transmission completed: $_SNAPSHOT_NAME"
 
 log "Initializing @home transmission: $_SNAPSHOT_NAME"
 
-_HOME_PARENT=$(find_parent_snapshot "$LOCAL_HOME_SNAP_DIR" "$DEST_HOME_SNAP_DIR")
+_HOME_PARENT=$(find_parent_snapshot \
+    "$LOCAL_HOME_SNAP_DIR" "$DEST_HOME_SNAP_DIR")
 
 if [[ -n "$_HOME_PARENT" ]]; then
 
