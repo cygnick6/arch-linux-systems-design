@@ -273,8 +273,6 @@ _ROOT_PARENT=$(find_parent_snapshot \
 
 if [[ -n "$_ROOT_PARENT" ]]; then
 
-    log "Starting staged @ incremental send: $_SNAPSHOT_NAME"
-
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
@@ -298,8 +296,6 @@ EOF
     log "Finished staged @ incremental send: $_SNAPSHOT_NAME"
 
 else
-
-    log "Starting staged @ full send: $_SNAPSHOT_NAME"
 
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
@@ -363,8 +359,6 @@ _HOME_PARENT=$(find_parent_snapshot \
 
 if [[ -n "$_HOME_PARENT" ]]; then
 
-    log "Starting staged @home incremental send: $_SNAPSHOT_NAME"
-
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
@@ -388,8 +382,6 @@ EOF
     log "Finished staged @home incremental send: $_SNAPSHOT_NAME"
 
 else
-
-    log "Starting staged @home full send: $_SNAPSHOT_NAME"
 
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
@@ -494,7 +486,7 @@ EOF
 
     sync -f "$DEST_HOME_RSYNC_STAGING_DIR"
 
-    log "Attempting unstage of @home rsync backup"
+    log "Checking @home rsync backup"
 
     if [[ ! -d "$DEST_HOME_RSYNC_STAGING_DIR" ]] || \
     ! find "$DEST_HOME_RSYNC_STAGING_DIR" \
@@ -505,15 +497,21 @@ EOF
 
     fi
 
+    log "@home rsync backup passed checks"
+    log "Deleting previous @home rsync backup"
+
     if btrfs subvolume show "$DEST_HOME_RSYNC_DIR" &>/dev/null; then
 
         btrfs subvolume delete "$DEST_HOME_RSYNC_DIR"
 
     fi
 
+    log "Deleted previous @home rsync backup"
+    log "Unstaging @home rsync backup"
+
     mv "$DEST_HOME_RSYNC_STAGING_DIR" "$DEST_HOME_RSYNC_DIR"
 
-    log "Finished unstaging of @home rsync backup"
+    log "Finished unstaging @home rsync backup"
     log "Finished rsync of @home: $_SNAPSHOT_NAME"
 
 else
