@@ -698,7 +698,7 @@ if [[ "$PRUNE_PAIRED" == "true" ]]; then
 
 else
 
-    log "Skipping paired pruning"
+    log "Paired pruning disabled - skipping"
 
 fi
 
@@ -720,7 +720,7 @@ if [[ "$PRUNE_UNPAIRED" == "true" ]]; then
 
 else
 
-    log "Skipping unpaired pruning"
+    log "Unpaired pruning disabled - skipping"
 
 fi
 
