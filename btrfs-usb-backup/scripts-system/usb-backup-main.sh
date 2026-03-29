@@ -498,15 +498,21 @@ EOF
     fi
 
     log "@home rsync backup passed checks"
-    log "Deleting previous @home rsync backup"
 
     if btrfs subvolume show "$DEST_HOME_RSYNC_DIR" &>/dev/null; then
 
+        log "Deleting previous @home rsync backup"
+
         btrfs subvolume delete "$DEST_HOME_RSYNC_DIR"
+
+        log "Deleted previous @home rsync backup"
+
+    else
+
+        log "No @home rsync backup exists to overwrite"
 
     fi
 
-    log "Deleted previous @home rsync backup"
     log "Unstaging @home rsync backup"
 
     mv "$DEST_HOME_RSYNC_STAGING_DIR" "$DEST_HOME_RSYNC_DIR"
