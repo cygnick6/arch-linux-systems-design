@@ -23,7 +23,7 @@ This document assumes familiarity with the [standard Arch installation flow](htt
 
 ## 1. Installation Assumptions
 
-- System booted in legacy BIOS mode
+- System and Arch environment booted in legacy BIOS mode
 - Disk device identified (e.g., /dev/sdX)
 - Network connectivity established
 - System clock synchronized
