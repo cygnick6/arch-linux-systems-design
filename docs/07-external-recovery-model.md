@@ -251,6 +251,7 @@ At this stage, the system provides:
     - Encrypted root file system
     - Structured Btrfs subvolume layout
     - Deterministic boot process
+    - System maintenance and hardware monitoring
 - Internal recovery strategy
     - Automated internal snapshot creation and management
     - Strategies for internally-sourced recovery
