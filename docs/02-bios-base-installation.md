@@ -15,7 +15,7 @@ This installation specifically targets:
 - No LVM
 - No keyfile-based unlock
 - Passphrase-based disk unlock at boot
-- BusyBox rather than systemd used for initramfs
+- BusyBox rather than systemd used for initramfs (early boot = minimal and predictable)
 - GRUB as bootloader
 
 This document assumes familiarity with the [standard Arch installation flow](https://wiki.archlinux.org/title/Installation_guide).
@@ -80,7 +80,7 @@ mount --mkdir /dev/sdX2 /mnt/boot
 
 Format, define the passphrase, and open the encrypted container:
 ```bash
-cryptsetup luksFormat /dev/sdX3
+cryptsetup luksFormat --type luks2 /dev/sdX3
 cryptsetup open /dev/sdX3 cryptroot
 ```
 
@@ -94,28 +94,42 @@ Format the file system in the encrypted container as Btrfs:
 mkfs.btrfs /dev/mapper/cryptroot
 ```
 
-Mount the file system and create subvolumes in a flat layout:
+Mount the file system:
 ```bash
 mount /dev/mapper/cryptroot /mnt
-
-btrfs subvolume create /mnt/@
-btrfs su cr /mnt/@home
-
-btrfs su cr /mnt/@root_snapshots
-btrfs su cr /mnt/@home_snapshots
-
-btrfs su cr /mnt/@root_backup_snapshots
-btrfs su cr /mnt/@home_backup_snapshots
-
-btrfs su cr /mnt/@root_milestone_snapshots
-btrfs su cr /mnt/@home_milestone_snapshots
-
-btrfs su cr /mnt/@var_cache
-btrfs su cr /mnt/@var_lib
-btrfs su cr /mnt/@var_log
-btrfs su cr /mnt/@var_spool
-btrfs su cr /mnt/@var_tmp
 ```
+
+Create subvolumes in a flat layout:
+```bash
+btrfs subvolume create /mnt/@
+btrfs subvolume create /mnt/@home
+
+btrfs subvolume create /mnt/@root_snapshots
+btrfs subvolume create /mnt/@home_snapshots
+
+btrfs subvolume create /mnt/@root_backup_snapshots
+btrfs subvolume create /mnt/@home_backup_snapshots
+
+btrfs subvolume create /mnt/@root_milestone_snapshots
+btrfs subvolume create /mnt/@home_milestone_snapshots
+
+btrfs subvolume create /mnt/@var_cache
+btrfs subvolume create /mnt/@var_lib
+btrfs subvolume create /mnt/@var_log
+btrfs subvolume create /mnt/@var_spool
+btrfs subvolume create /mnt/@var_tmp
+```
+
+Disable Copy-on-Write (CoW) where log files will be stored:
+```bash
+chattr +C /mnt/@var_log
+```
+
+An overview of the mount options used:
+- `noatime` - reduce unnecessary write operations
+- `compress=zstd` - efficient read operations and space usage
+- `compress=no` - the transient contents of the `@var/` subvolumes are not worth compressing
+- `subvol=` - subvolume to mount from `/dev/mapper/cryptroot`
 
 Unmount the file system and mount the subvolumes using mount options:
 ```bash
@@ -127,22 +141,17 @@ mount --mkdir -o noatime,compress=zstd,subvol=@home /dev/mapper/cryptroot /mnt/h
 mount --mkdir -o noatime,compress=zstd,subvol=@root_snapshots /dev/mapper/cryptroot /mnt/.snapshots
 mount --mkdir -o noatime,compress=zstd,subvol=@home_snapshots /dev/mapper/cryptroot /mnt/home/.snapshots
 
-mount --mkdir -o noatime,compress=zstd,subvol=@root_backup_snapshots /dev/mapper/cryptroot /mnt/.root-backup-snapshots
-mount --mkdir -o noatime,compress=zstd,subvol=@home_backup_snapshots /dev/mapper/cryptroot /mnt/.home-backup-snapshots
+mount --mkdir -o noatime,compress=zstd,subvol=@root_backup_snapshots /dev/mapper/cryptroot /mnt/.backup-snapshots
+mount --mkdir -o noatime,compress=zstd,subvol=@home_backup_snapshots /dev/mapper/cryptroot /mnt/home/.backup-snapshots
 
-mount --mkdir -o noatime,compress=zstd,subvol=@root_milestone_snapshots /dev/mapper/cryptroot /mnt/.root-milestone-snapshots
-mount --mkdir -o noatime,compress=zstd,subvol=@home_milestone_snapshots /dev/mapper/cryptroot /mnt/.home-milestone-snapshots
+mount --mkdir -o noatime,compress=zstd,subvol=@root_milestone_snapshots /dev/mapper/cryptroot /mnt/.milestone-snapshots
+mount --mkdir -o noatime,compress=zstd,subvol=@home_milestone_snapshots /dev/mapper/cryptroot /mnt/home/.milestone-snapshots
 
 mount --mkdir -o noatime,compress=no,subvol=@var_cache /dev/mapper/cryptroot /mnt/var/cache
 mount --mkdir -o noatime,compress=no,subvol=@var_lib /dev/mapper/cryptroot /mnt/var/lib
-mount --mkdir -o noatime,compress=no,subvol=@var_log /dev/mapper/cryptroot /mnt/var/log
+mount -o noatime,compress=no,subvol=@var_log /dev/mapper/cryptroot /mnt/var/log
 mount --mkdir -o noatime,compress=no,subvol=@var_spool /dev/mapper/cryptroot /mnt/var/spool
 mount --mkdir -o noatime,compress=no,subvol=@var_tmp /dev/mapper/cryptroot /mnt/var/tmp
-```
-
-Disable Copy-on-Write (CoW) for log files:
-```bash
-chattr +C /mnt/var/log
 ```
 
 
@@ -153,18 +162,22 @@ Install essential packages:
 pacstrap -K /mnt base linux linux-firmware cryptsetup btrfs-progs grub
 ```
 
-- Note that the external USB backup system included in this architecture makes use of `sudo` for notification support (it’s one line in `usb-backup-lib.sh` - edit it yourself if you like)
+Some notes on additional packages:
+- `sudo` is used by the external USB backup system included in this architecture for notification support. Notifications are optional if disabled in the configuration file. The *notify* function in `usb-backup-lib.sh` contains the only use of `sudo`, and may be altered manually
+- `networkmanager` is assumed to be used in the [i3] and [Sway Graphical Stack] documents, as `nm-applet` is also used
 
 Consider also installing:
 - CPU microcode (`intel-ucode` or `amd-ucode`)
-- networking software
+- `networkmanager`
 - a firewall
 - `reflector`, a tool for Arch mirror server selection
 - `sudo`, a privilege escalation utility
 - `xdg-user-dirs` for user XDG home directory management
-- a console text editor
-- a font, e.g. you may be setting `terminus-font` for vconsole readability
 - `tlp` for *laptop* power management tools
+- `btrfsmaintenance` for a structured system maintenance toolkit
+- `smartmontools` for automated hardware reporting
+- a console text editor
+- a font, e.g. one may be set for vconsole readability
 - packages for accessing man and info pages (`man-db man-pages texinfo`)
 
 Generate the `fstab` file:
@@ -179,6 +192,8 @@ arch-chroot /mnt
 
 
 ## 8. Initramfs Configuration (Encryption Hook)
+
+This configuration uses the BusyBox-based initramfs (via `base` and `udev` hooks) rather than `systemd`.
 
 Edit `/etc/mkinitcpio.conf`:
 - Replace `systemd` with `udev`
@@ -203,7 +218,7 @@ This enables early userspace unlocking of the LUKS container during boot.
 
 Edit `/etc/default/grub`, informing `GRUB` on how to handle the encrypted root.
 
-To manually retreive the UUID of the encrypted root partition (not the PARTUUID):
+To manually retrieve the UUID of the encrypted root partition (not the PARTUUID):
 ```bash
 blkid /dev/sdX3
 ```
@@ -213,9 +228,9 @@ Optionally append the correct UUID, commented, to the `/etc/default/grub` file i
 blkid -s UUID -o value /dev/sdX3 | sed 's/^/# /' >> /etc/default/grub
 ```
 
-Edit `/etc/default/grub` and add the cryptdevice paramater (use copy and paste if you appended):
+Edit `/etc/default/grub` and add the paramaters (use copy and paste if you appended):
 ```
-GRUB_CMDLINE_LINUX="cryptdevice=UUID=<recorded-UUID>:cryptroot root=/dev/mapper/cryptroot"
+GRUB_CMDLINE_LINUX="cryptdevice=UUID=<recorded-UUID>:cryptroot root=/dev/mapper/cryptroot rootflags=subvol=@"
 ```
 
 Install `GRUB` (BIOS target):
@@ -249,10 +264,16 @@ Proceed with base configuration:
 - User creation
 - User privilege escalation
 
+This architecture also covers several more configurations at this step.
+
+### 11.1 Linger
+
 Enable linger for a user to allow the use of their `systemd user` services, if a display manager will not be used to start user sessions:
 ```bash
 loginctl enable-linger UserName
 ```
+
+### 11.2 Home Directories
 
 `xdg-user-dirs` may be installed for XDG home directory management.
 
@@ -263,7 +284,9 @@ Create and configure the default selection of XDG home directories:
 xdg-user-dirs-update
 ```
 
-Edit `~/.config/user-dirs.dirs` to personalize the XDG home directory selections. Run `xdg-user-dirs-update` to flush any changes.
+Edit `~/.config/user-dirs.dirs` to personalize the XDG home directory selections. Run `xdg-user-dirs-update` again to flush any changes.
+
+### 11.3 Power Management
 
 `tlp` may be installed for laptop power management.
 
@@ -279,7 +302,229 @@ HandleLidSwitchExternalPower=ignore
 ```
 
 
-## 12. Transparent Boot Summary
+## 12. System Maintenance
+
+This architecture makes use of the following:
+- `btrfsmaintenance` - Btrfs system maintenance (Btrfs scrub, filtered Btrfs balance, TRIM)
+- `smartmontools` - hardware health monitoring and testing tools for drives
+
+### 12.1 Target Schedule
+
+Scheduled system maintence and tests are staggered to separate disk usage and limit competition.
+
+The target system maintenance weekly schedule (including the weekly backup schedule) is listed below:
+
+| Day       | Weekly?        | Time  | Role                   |
+|-----------|----------------|-------|------------------------|
+| Monday    | Weekly         | 18:00 | SMART short test       |
+| Tuesday   | Weekly         | 19:00 | Filtered Btrfs balance |
+| Wednesday | Weekly         | 18:00 | TRIM                   |
+| Thursday  | -              | -     | -                      |
+| Friday    | Weekly         | 17:00 | Btrfs usb backup       |
+| Saturday  | First of month | 10:00 | SMART long test        |
+| Saturday  | Weekly         | 14:30 | Btrfs scrub            |
+| Sunday    | -              | -     | -                      |
+
+This target schedule is customizable - keep in mind the following:
+- This schedule targets daily-use laptop scenario - systems left on 24/7 should use a different schedule
+- Most of the tasks here may have persistant timers - the next time the system is powered on, the task will trigger if the system was not powered on for a scheduled task
+- Only SMART tests (via `smartmontools`) will not execute for the period if the system is powered off
+- High load tasks are best run while connected to AC power, e.g. Btrfs scrub and filtered Btrfs balance
+
+Tasks are arranged this way because they each have different loads on the system:
+- Light load tasks
+    - SMART short test
+    - TRIM
+- Moderate load tasks
+    - Filtered Btrfs balance
+- High load tasks
+    - Btrfs usb backup
+    - Btrfs scrub
+    - SMART long test
+    
+Given the target schedule, randomized delay is introduced in some tasks to reduce contention after missed schedules:
+- Filtered Btrfs balance
+- Btrfs scrub
+
+> This configuration will assume that the user will have the system connected to AC power for most scheduled Btrfs balances and Btrfs scrubs. On occasions where the system is not when a Btrfs balance or Btrfs scrub is scheduled, then it will be put off until the system is on AC power *and* rebooted
+
+### 12.2 Configure btrfsmaintenance
+
+`btrfsmaintenance` may be installed for structured control over system maintenance tasks including Btrfs balance, Btrfs scrub, and TRIM.
+
+Btrfs balance:
+- Reclaim space and prevent chunk imbalance
+
+Btrfs scrub:
+- Verify data integrity and detect corruption
+- Btrfs scrub will not attempt to self-heal in this architecture as redundant copies in a RAID configuration are not used
+
+TRIM:
+- Inform SSD about unused blocks
+
+Edit `/etc/sysconfig/btrfsmaintenance` to contain the following:
+```ini
+BTRFS_SCRUB_PERIOD="none"
+BTRFS_BALANCE_PERIOD="none"
+
+BTRFS_BALANCE_ARGS="-dusage=75 -musage=75"
+
+BTRFS_SCRUB_PRIORITY="idle"
+BTRFS_BALANCE_PAUSE="yes"
+BTRFS_SCRUB_PAUSE="yes"
+```
+
+### 12.3 Configure Services
+
+A couple high load services should be edited and told to only trigger when the system is connected to AC power.
+
+Edit `btrfs-scrub.service`:
+```bash
+systemctl edit btrfs-scrub.service
+```
+
+Add to `btrfs-scrub.service`:
+```ini
+[Unit]
+ConditionACPower=true
+```
+
+Edit `btrfs-balance.service`:
+```bash
+systemctl edit btrfs-balance.service
+```
+
+Add to `btrfs-balance.service`:
+```ini
+[Unit]
+ConditionACPower=true
+```
+
+### 12.4 Configure Timers
+
+The services defined by `btrfsmaintenance` required timers to start. Granual control can be gained by manually configuring each timer, instead of having `btrfsmaintenance` configure them.
+
+Edit `btrfs-balance.timer`:
+```bash
+systemctl edit btrfs-balance.timer
+```
+
+Add to `btrfs-balance.timer`:
+```ini
+[Timer]
+OnCalendar=
+OnCalendar=Tue *-*-* 19:00:00
+Persistent=true
+RandomizedDelaySec=1h
+```
+
+Edit `btrfs-scrub.timer`:
+```bash
+systemctl edit btrfs-scrub.timer
+```
+
+Add to `btrfs-scrub.timer`:
+```ini
+[Timer]
+OnCalendar=
+OnCalendar=Sat *-*-* 14:30:00
+Persistent=true
+RandomizedDelaySec=1h
+```
+
+Edit `fstrim.timer`:
+```bash
+systemctl edit fstrim.timer
+```
+
+Add to `fstrim.timer`:
+```ini
+[Timer]
+OnCalendar=
+OnCalendar=Wed *-*-* 18:00:00
+Persistent=true
+```
+
+Enable timers:
+```bash
+systemctl enable --now btrfs-balance.timer
+systemctl enable --now btrfs-scrub.timer
+systemctl enable --now fstrim.timer
+```
+
+### 12.5 SMART (smartmontools)
+
+`smartmontools` may be installed for hardware health monitoring tools for drives.
+
+SMART:
+- **S**elf-**M**onitoring **A**nalysis and **R**eporting **T**echnology
+
+Detects things like:
+- Read/write errors
+- Wear leveling issues (SSD lifespan)
+- Reallocated sectors (HHD)
+- Temperature problems
+
+Edit the file `/etc/smartd.conf`:
+```conf
+DEVICESCAN -a -o on -S on -s (S/../../1/18|L/../01-07/6/10) -n standby
+```
+
+- Adjust device if needed
+
+This configuration:
+- `DEVICESCAN` - monitor all drives
+- `-a` - enable all SMART checks
+- `-o on` - enable automatic offline testing
+- `-S on` - enable attribute autosave
+- `-s (...)` - schedule tests:
+    - `S/../../1/18` - short tests weekly on Mondays at 18:00
+    - `L/../01-07/6/10` - long tests monthly on first Saturdays of the month at 10:00
+- `-n standby` - skip if disk is idle (good for laptops)
+
+Enable SMART service:
+```bash
+systemctl enable --now smartd.service
+```
+
+### 12.6 Checking Maintenance Status
+
+- Checkups on system maintenance will be explored further in the [Operational Discipline](08-operational-discipline.md) document
+
+To list information on all systemd timers:
+```bash
+systemctl list-timers
+```
+
+`btrfsmaintenance` logs:
+```bash
+journalctl -u btrfs-scrub
+journalctl -u btrfs-balance
+journalctl -u fstrim
+```
+
+Btrfs scrub status on `/` (data integrity issues):
+```bash
+btrfs scrub status /
+```
+
+Quick SMART health:
+```bash
+smartctl -H /dev/sdX
+```
+
+Detailed SMART health:
+```bash
+smartctl -a /dev/sdX
+```
+
+SMART logs:
+```bash
+journalctl -u smartd
+```
+
+
+## 13. Transparent Boot Summary
 
 On boot:
 1. BIOS firmware loads `GRUB` from disk
@@ -290,7 +535,7 @@ On boot:
 6. System continues normal initialization
 
 
-## 13. Security Model Notes
+## 14. Security Model Notes
 
 - `/boot` remains unencrypted due to BIOS constraints
 - Disk encryption protects against offline disk access and device theft
@@ -299,11 +544,13 @@ On boot:
 Passphrase-only unlocking is intentionally chosen over embedded keyfiles to preserve physical security.
 
 
-## 14. Next Steps
+## 15. Next Steps
 
 At this stage, the system provides:
-- Encrypted root file system
-- Structured Btrfs subvolume layout
-- Deterministic boot process
+- Base installation
+    - Encrypted root file system
+    - Structured Btrfs subvolume layout
+    - Deterministic boot process
+    - System maintenance and hardware monitoring
 
 The next layer of the architecture is the [Internal Recovery Model](04-internal-recovery-model.md), which formalizes internal snapshot management and rollback strategies.
