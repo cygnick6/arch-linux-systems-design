@@ -224,7 +224,7 @@ Optionally append the correct UUID, commented, to the `/etc/default/grub` file i
 blkid -s UUID -o value /dev/sdX2 | sed 's/^/# /' >> /etc/default/grub
 ```
 
-Edit `/etc/default/grub` and add the paramaters (use copy and paste if you appended):
+Edit `/etc/default/grub` and add the paramaters (use copy and paste if the UUID was appended):
 ```
 GRUB_CMDLINE_LINUX="cryptdevice=UUID=<recorded-UUID>:cryptroot root=/dev/mapper/cryptroot rootflags=subvol=@"
 ```
@@ -236,6 +236,8 @@ grub-install \
     --efi-directory=/boot \
     --bootloader-id=GRUB
 ```
+
+- If `grub-install` fails and is asking to set `GRUB_ENABLE_CRYPTODISK=y`, that means `GRUB` is incorrectly looking in the encrypted `/` for `/boot`. This architecture targets having a separate, unencrypted `/boot`
 
 Generate the configuration:
 ```bash

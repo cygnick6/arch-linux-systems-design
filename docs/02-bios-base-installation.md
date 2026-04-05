@@ -228,8 +228,8 @@ Optionally append the correct UUID, commented, to the `/etc/default/grub` file i
 blkid -s UUID -o value /dev/sdX3 | sed 's/^/# /' >> /etc/default/grub
 ```
 
-Edit `/etc/default/grub` and add the paramaters (use copy and paste if you appended):
-```
+Edit `/etc/default/grub` and add the paramaters (use copy and paste if the UUID was appended):
+```ini
 GRUB_CMDLINE_LINUX="cryptdevice=UUID=<recorded-UUID>:cryptroot root=/dev/mapper/cryptroot rootflags=subvol=@"
 ```
 
@@ -238,10 +238,13 @@ Install `GRUB` (BIOS target):
 grub-install --target=i386-pc /dev/sdX
 ```
 
+- If `grub-install` fails and is asking to set `GRUB_ENABLE_CRYPTODISK=y`, that means `GRUB` is incorrectly looking in the encrypted `/` for `/boot`. This architecture targets having a separate, unencrypted `/boot`
+
 Generate the configuration:
 ```bash
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
+
 
 ## 10. Pre-Reboot Configuration
 
