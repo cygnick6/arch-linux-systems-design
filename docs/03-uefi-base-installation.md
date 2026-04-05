@@ -524,8 +524,27 @@ SMART logs:
 journalctl -u smartd
 ```
 
+## 13. Root Milestone Snapshots
 
-## 13. Transparent Boot Summary
+For extra control over the development of the Arch system, the `@root_milestone_snapshots` subvolume created earlier in this document may be used.
+
+At this stage in the system installation, the base system is installed, but no non-essential packages, internal recovery models, or graphical stacks have been installed.
+
+By creating a milestone snapshot of `@` now, the base of this installation may be recorded.
+
+### 13.1 Create Internal Root Milestone Snapshot
+
+Create a read-only `@` snapshot named `03-base-install`:
+```bash
+btrfs subvolume snapshot -r / /.root-milestone-snapshots/03-base-install
+```
+
+### 13.2 Root Milestone Rollback
+
+Internally-sourced rollback is explored in the [Internal Recovery Model](04-internal-recovery-model.md#5.2-root-milestone-rollback) document.
+
+
+## 14. Transparent Boot Summary
 
 On boot:
 1. UEFI firmware loads `GRUB` from the EFI System Partition
@@ -536,7 +555,7 @@ On boot:
 6. System continues normal initialization
 
 
-## 14. Security Model Notes
+## 15. Security Model Notes
 
 - EFI System Partition is unencrypted
 - Disk encryption protects against offline disk access and device theft
@@ -546,7 +565,7 @@ On boot:
 Passphrase-only unlocking is intentionally chosen over embedded keyfiles to preserve physical security.
 
 
-## 15. Next Steps
+## 16. Next Steps
 
 At this stage, the system provides:
 - Base installation

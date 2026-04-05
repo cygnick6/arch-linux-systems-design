@@ -282,14 +282,14 @@ By creating a milestone snapshot of `@` now, an extra degree of freedom is affor
 
 ### 5.1 Create Internal Root Milestone Snapshot
 
-Create a read-only `@` snapshot named `01-base-install`:
+Create a read-only `@` snapshot named `04-internal-recovery`:
 ```bash
-btrfs subvolume snapshot -r / /.root-milestone-snapshots/01-base-install
+btrfs subvolume snapshot -r / /.root-milestone-snapshots/04-internal-recovery
 ```
 
 ### 5.2 Root Milestone Rollback
 
-The `/` file system (not including any subvolume or contained file system other than `@`) may be restored to the `01-base-install` snapshot.
+The `/` file system (not including any subvolume or contained file system other than `@`) may be restored to the `04-internal-recovery` snapshot.
 
 To do so, perform an [Offline Root Rollback](###4.2-Offline-Rollback), sourcing the snapshot to rollback to from `@root_milestone_snapshots` rather than the `Snapper` managed `@root_snapshots`.
 
@@ -302,9 +302,9 @@ Inspect available `@` milestone snapshots:
 ls /mnt/btrfs/@root_milestone_snapshots
 ```
 
-Inspect a specific `@` milestone snapshot (`01-base-install` or other):
+Inspect a specific `@` milestone snapshot (`04-internal-recovery` or other):
 ```bash
-ls /mnt/btrfs/@root_milestone_snapshots/01-base-install
+ls /mnt/btrfs/@root_milestone_snapshots/04-internal-recovery
 ```
 
 - `grub-btrfs` was configured to also allow temporary boots into root milestone snapshots for inspection
@@ -313,10 +313,10 @@ ls /mnt/btrfs/@root_milestone_snapshots/01-base-install
 
 6. Replace the current `@` subvolume:
 
-Rollback the current `@` to the target snapshot (`01-base-install` or other):
+Rollback the current `@` to the target snapshot (`04-internal-recovery` or other):
 ```bash
 btrfs subvolume snapshot \
-    /mnt/btrfs/.root-milestone-snapshots/01-base-install \
+    /mnt/btrfs/.root-milestone-snapshots/04-internal-recovery \
     /mnt/btrfs/@
 ```
 

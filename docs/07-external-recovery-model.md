@@ -226,10 +226,10 @@ At this stage in the system installation, the base installation, internal recove
 
 ### 9.1 Create Internal Milestone Snapshots
 
-Create read-only `@` and `@home` snapshots named `07-external-recovery-model`:
+Create read-only `@` and `@home` snapshots named `07-external-recovery`:
 ```bash
-btrfs subvolume snapshot -r / /.root-milestone-snapshots/07-external-recovery-model
-btrfs subvolume snapshot -r /home /.home-milestone-snapshots/07-external-recovery-model
+btrfs subvolume snapshot -r / /.root-milestone-snapshots/07-external-recovery
+btrfs subvolume snapshot -r /home /.home-milestone-snapshots/07-external-recovery
 ```
 
 ### 9.2 Milestone Rollback
