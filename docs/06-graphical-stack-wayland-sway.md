@@ -24,6 +24,8 @@ This is not a complete list of packages to install a ready-to-use graphical envi
 
 ## 1. Graphical Environment Structure
 
+The graphical environment is composed of distinct functional layers.
+
 ## 1.1 Wayland Compositor
 
 Replaces:

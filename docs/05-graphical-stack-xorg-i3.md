@@ -193,14 +193,21 @@ If you anticipate wanting to start over from this stage, consider utillizing the
 
 Install choice packages to satisfy the [structure](##-1.-graphical-environment-structure) described above.
 
-### 2.2 Start User Environment
+### 2.2 Create .xinitrc
+
+In order to start a session, `~/.xinitrc` must exist and contain at least the following line:
+```ini
+exec i3
+```
+
+### 2.3 Start User Environment
 
 When in the TTY interface, logged in as the personal user, execute this to start the environment:
 ```bash
 startx
 ```
 
-### 2.3 Dotfiles
+### 2.4 Dotfiles
 
 A default config for `i3` may be created. Check its contents to get familiar with the layout, customizable aspects, and general flow of using `i3`.
 
