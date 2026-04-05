@@ -363,7 +363,12 @@ Btrfs scrub:
 TRIM:
 - Inform SSD about unused blocks
 
-Edit `/etc/sysconfig/btrfsmaintenance` to contain the following:
+Ensure the config directory is created:
+```bash
+sudo mkdir -p /etc/sysconfig
+```
+
+Create if needed, and edit `/etc/sysconfig/btrfsmaintenance` to contain the following:
 ```ini
 BTRFS_SCRUB_PERIOD="none"
 BTRFS_BALANCE_PERIOD="none"
