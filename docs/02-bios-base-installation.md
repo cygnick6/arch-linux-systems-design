@@ -287,7 +287,7 @@ Create and configure the default selection of XDG home directories:
 xdg-user-dirs-update
 ```
 
-Edit `~/.config/user-dirs.dirs` to personalize the XDG home directory selections. Run `xdg-user-dirs-update` again to flush any changes.
+Edit `~/.config/user-dirs.dirs` to personalize the XDG home directory selections. You may also need to manually create each directory, before running `xdg-user-dirs-update` again to flush customizations.
 
 ### 11.3 Power Management
 
