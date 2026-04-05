@@ -50,10 +50,39 @@ pacman -S snapper snap-pac grub-btrfs
 
 ### 3.2 Configure Snapper & Tools
 
-Create `Snapper` configs for both `@` and `@home`. Each will detect the subvolumes created and mounted to `/.snapshots` and `/home/.snapshots` in the [BIOS](02-bios-base-installation.md#6.-btrfs-file-system--subvolume-layout) or [UEFI Base Installation](03-uefi-base-installation.md#6.-btrfs-file-system--subvolume-layout):
+`Snapper` needs configs for both `@` and `@home`.
+
+The following subvolumes were already created in the [BIOS](02-bios-base-installation.md) or [UEFI Base Installation](03-uefi-base-installation.md) documents:
+- `@root_snapshots` - mounted to `/.snapshots`
+- `@home_snapshots` - mounted to `/home/.snapshots`
+
+These subvolumes will be ultimately supplied to `Snapper`. Before then, they must be umounted so that `Snapper` can happily create them.
+
+Unmount and remove the existing, target subvolumes where `Snapper` snapshots will ultimately live:
+```bash
+umount /.snapshots
+umount /home/.snapshots
+
+rmdir /.snapshots
+rmdir /home/.snapshots
+```
+
+Create both `Snapper` configs, creating new subvolumes that will not be ultimately used:
 ```bash
 snapper -c root create-config /
 snapper -c home create-config /home
+```
+
+Remove `Snapper`’s newly created subvolumes:
+```bash
+btrfs subvolume delete /.snapshots
+btrfs subvolume delete /home/.snapshots
+```
+
+Remount the original target subvolumes, to be used by `Snapper` since they are mounted where `Snapper` will look:
+```bash
+mkdir /.snapshots /home/.snapshots
+mount -a
 ```
 
 The generated, default configurations can each be found at `/etc/snapper/configs/`. Consider altering the timeline and quantity values to fit your use case (e.g. `@home` snapshots may be generated less often, and fewer snapshots kept on hand).
