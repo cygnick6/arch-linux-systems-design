@@ -145,7 +145,7 @@ mount --mkdir -o noatime,compress=zstd,subvol=@home_milestone_snapshots /dev/map
 
 mount --mkdir -o noatime,compress=no,subvol=@var_cache /dev/mapper/cryptroot /mnt/var/cache
 mount --mkdir -o noatime,compress=no,subvol=@var_lib /dev/mapper/cryptroot /mnt/var/lib
-mount -o noatime,compress=no,subvol=@var_log /dev/mapper/cryptroot /mnt/var/log
+mount --mkdir -o noatime,compress=no,subvol=@var_log /dev/mapper/cryptroot /mnt/var/log
 mount --mkdir -o noatime,compress=no,subvol=@var_spool /dev/mapper/cryptroot /mnt/var/spool
 mount --mkdir -o noatime,compress=no,subvol=@var_tmp /dev/mapper/cryptroot /mnt/var/tmp
 ```
