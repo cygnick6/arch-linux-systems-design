@@ -226,9 +226,8 @@ validate_backup_uuid_conf () {
 
 prepare_local_directories() {
 
-    mkdir -p "$LOCAL_SNAP_DIR" "$LOCAL_ROOT_SNAP_DIR" \
-             "$LOCAL_HOME_SNAP_DIR" "$LOCK_DIR" "$STATE_DIR" \
-             "$STATE_COUNTER_DIR" "$STATE_FLAG_DIR" \
+    mkdir -p "$LOCAL_ROOT_SNAP_DIR" "$LOCAL_HOME_SNAP_DIR" "$LOCK_DIR" \
+             "$STATE_DIR" "$STATE_COUNTER_DIR" "$STATE_FLAG_DIR" \
              "$STATE_TIMESTAMP_DIR" "$LOG_DIR"
 
     chmod 700 "$STATE_DIR"
