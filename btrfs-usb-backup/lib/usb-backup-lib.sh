@@ -76,6 +76,10 @@ error() {
 
 }
 
+################################################################################
+# ERROR HANDLER
+################################################################################
+
 error_handler() {
 
     local exit_code=$?
@@ -101,6 +105,10 @@ error_handler() {
     exit "$exit_code"
 
 }
+
+################################################################################
+# COMMAND WRAPPER
+################################################################################
 
 run_step() {
 
@@ -439,6 +447,32 @@ mount_usb_drive() {
     if [[ "$manual" == "true" ]]; then
 
         printf "Backup drive mounted\n"
+
+    fi
+
+}
+
+################################################################################
+# RESET REMOTE STAGING FUNCTION
+################################################################################
+
+reset_staging_dir() {
+
+    local dir="$1"
+
+    if [[ -d "$dir" ]]; then
+
+        while IFS= read -r subvol; do
+
+            btrfs subvolume delete "$subvol" || true
+
+        done < <(btrfs subvolume list -o "$dir" | awk '{print $NF}' | sed "s|^|$dir/|")
+
+        find "$dir" -mindepth 1 -not -type d -delete 2>/dev/null || true
+
+    else
+
+        mkdir -p "$dir"
 
     fi
 

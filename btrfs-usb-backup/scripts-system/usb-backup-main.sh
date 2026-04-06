@@ -208,8 +208,9 @@ mkdir -p "$DEST_ROOT_SNAP_DIR" "$DEST_ROOT_SNAP_STAGING_DIR" \
          "$DEST_HOME_SNAP_DIR" "$DEST_HOME_SNAP_STAGING_DIR" \
          "$DEST_HOME_RSYNC_DIR"
 
-find "$DEST_ROOT_SNAP_STAGING_DIR/" -mindepth 1 -delete
-find "$DEST_HOME_SNAP_STAGING_DIR/" -mindepth 1 -delete
+reset_staging_dir "$DEST_ROOT_SNAP_STAGING_DIR"
+reset_staging_dir "$DEST_HOME_SNAP_STAGING_DIR"
+reset_staging_dir "$DEST_HOME_RSYNC_DIR"
 
 ################################################################################
 # CREATE NEW LOCAL SNAPSHOTS
