@@ -205,7 +205,7 @@ printf "\n"
 # Schedule
 
 printf "Schedule:\n"
-printf "---------\n"
+printf -- "---------\n"
 
 exec 9>"$LOCK_FILE"
 
@@ -232,7 +232,7 @@ printf "\n"
 # Target backup device
 
 printf "Target Backup Device Status:\n"
-printf "----------------------------\n"
+printf -- "----------------------------\n"
 
 _DEVICE_UUID=$(blkid -U "$BACKUP_UUID" 2>/dev/null || true)
 
@@ -257,7 +257,7 @@ _HOME_PAIRED_SNAPS_COUNT=$(count_paired_snaps \
     "$LOCAL_HOME_SNAP_DIR" "$DEST_HOME_SNAP_DIR")
 
 printf "Existing Paired Snapshot Count / Max:\n"
-printf "-------------------------------------\n"
+printf -- "-------------------------------------\n"
 
 printf "%-35s %s\n" "Root" "$_ROOT_PAIRED_SNAPS_COUNT / $MAX_ROOT_PAIRED_SNAPS"
 printf "%-35s %s\n" "Home" "$_HOME_PAIRED_SNAPS_COUNT / $MAX_HOME_PAIRED_SNAPS"
@@ -281,7 +281,7 @@ if (( MAX_ROOT_UNPAIRED_SNAPS + MAX_HOME_UNPAIRED_SNAPS != 0 )); then
         "$DEST_HOME_SNAP_DIR" "$LOCAL_HOME_SNAP_DIR")
 
     printf "Unpaired snapshots:\n"
-    printf "-------------------\n"
+    printf -- "-------------------\n"
 
     printf "%-35s %s\n" "Local root" "$_LOCAL_ROOT_UNPAIRED_SNAPS_COUNT"
     printf "%-35s %s\n" "Remote root" "$_REMOTE_ROOT_UNPAIRED_SNAPS_COUNT"
@@ -307,7 +307,7 @@ fi
 # /home rsync
 
 printf "File-level /home rsync:\n"
-printf "-----------------------\n"
+printf -- "-----------------------\n"
 
 if [[ -d "$DEST_HOME_RSYNC_DIR" ]] && \
    compgen -G "$DEST_HOME_RSYNC_DIR/*" > /dev/null; then
@@ -325,7 +325,7 @@ printf "\n"
 # Backups
 
 printf "Backup Status:\n"
-printf "--------------\n"
+printf -- "--------------\n"
 
 print_file_contents "First backup success" \
     "$FIRST_BACKUP_SUCCESS_TIMESTAMP_FILE"
@@ -347,7 +347,7 @@ printf "\n"
 # Scrubs
 
 printf "Scrub Status:\n"
-printf "-------------\n"
+printf -- "-------------\n"
 
 print_file_contents "Last scrub prompt" "$LAST_SCRUB_PROMPT_TIMESTAMP_FILE"
 
@@ -364,7 +364,7 @@ printf "\n"
 # Backup drive health
 
 printf "USB Backup Drive Health:\n"
-printf "------------------------\n"
+printf -- "------------------------\n"
 
 print_file_contents "At last successful scrub" "$LAST_SCRUB_RESULT_FILE"
 
