@@ -122,21 +122,19 @@ fi
 stdout_stderr_log_to_file
 
 ################################################################################
-# ERROR HANDLER
+# ERROR & CLEANUP HANDLER
 ################################################################################
 
-error_handler() {
+cleanup_handler() {
 
-    error "Error on usb-backup-main.sh line $LINENO"
     notify "Backup error"
 
     log "Starting cleanup"
 
     unmount_usb_drive
 
-    log "Finished cleanup - exiting"
+    log "Finished cleanup"
     log_declare "usb-backup-main.sh exited with errors"
-    exit 1
 
 }
 

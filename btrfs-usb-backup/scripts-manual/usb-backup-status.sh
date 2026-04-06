@@ -74,15 +74,13 @@ fi
 stdout_stderr_log_to_file
 
 ################################################################################
-# ERROR HANDLER
+# ERROR & CLEANUP HANDLER
 ################################################################################
 
-error_handler() {
+cleanup_handler() {
 
-    error "Error on usb-backup-status.sh line $LINENO"
-    notify "Error while retreving backup system status"
+    notify "System status retrieval error"
     log_declare "usb-backup-status.sh exited with errors"
-    exit 1
 
 }
 

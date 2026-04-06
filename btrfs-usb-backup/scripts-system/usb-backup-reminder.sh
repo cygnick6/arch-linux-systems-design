@@ -78,15 +78,13 @@ fi
 stdout_stderr_log_to_file
 
 ################################################################################
-# ERROR HANDLER
+# ERROR & CLEANUP HANDLER
 ################################################################################
 
-error_handler() {
+cleanup_handler() {
 
-    error "Error on usb-backup-reminder.sh line $LINENO"
     notify "Backup reminder error"
     log_declare "usb-backup-reminder.sh exited with errors"
-    exit 1
 
 }
 

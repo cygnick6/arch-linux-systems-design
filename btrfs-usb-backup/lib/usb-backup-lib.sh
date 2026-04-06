@@ -76,6 +76,32 @@ error() {
 
 }
 
+error_handler() {
+
+    local exit_code=$?
+    local func src line
+
+    error "Error occurred. Exit code: $exit_code"
+    error "Stack trace:"
+
+    for i in "${!FUNCNAME[@]}"; do
+
+        func="${FUNCNAME[$i]}"
+        src="${BASH_SOURCE[$i]}"
+        line="${BASH_LINENO[$((i-1))]}"
+
+        [[ "$i" -eq 0 ]] && continue
+
+        error "  at ${func} (${src}:${line})"
+
+    done
+
+    cleanup_handler
+
+    exit "$exit_code"
+
+}
+
 run_step() {
 
     local description="$1"

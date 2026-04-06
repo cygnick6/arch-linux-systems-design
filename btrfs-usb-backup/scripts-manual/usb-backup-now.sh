@@ -77,15 +77,13 @@ fi
 stdout_stderr_log_to_file
 
 ################################################################################
-# ERROR HANDLER
+# ERROR & CLEANUP HANDLER
 ################################################################################
 
-error_handler() {
+cleanup_handler() {
 
-    error "Error on usb-backup-now.sh line $LINENO"
     notify "Manual backup error"
     log_declare "usb-backup-now.sh exited with errors"
-    exit 1
 
 }
 

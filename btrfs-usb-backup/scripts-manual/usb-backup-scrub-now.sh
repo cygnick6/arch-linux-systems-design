@@ -85,21 +85,19 @@ fi
 stdout_stderr_log_to_file
 
 ################################################################################
-# ERROR HANDLER
+# ERROR & CLEANUP HANDLER
 ################################################################################
 
-error_handler() {
+cleanup_handler() {
 
-    error "Error on usb-backup-scrub-now.sh line $LINENO"
     notify "Manual scrub error"
 
     log "Starting cleanup"
 
     unmount_usb_drive
 
-    log "Finished cleanup - exiting"
+    log "Finished cleanup"
     log_declare "usb-backup-scrub-now.sh exited with errors"
-    exit 1
 
 }
 
