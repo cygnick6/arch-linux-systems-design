@@ -1,5 +1,5 @@
 [Unit]
-Description=usb-backup.service
+Description=usb-backup-main.service
 After=local-fs.target
 
 [Service]
