@@ -131,7 +131,7 @@ notify "Reminder - insert target USB device to backup"
 
 log "Attempting backup in case target USB device is detectable"
 
-systemctl start usb-backup.service
+systemctl start usb-backup-main.service
 
 ################################################################################
 # FINALIZE

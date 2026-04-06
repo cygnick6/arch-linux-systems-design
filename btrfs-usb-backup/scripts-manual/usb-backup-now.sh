@@ -139,7 +139,7 @@ log "Created backup-due flag"
 printf "Manually prompting for backup\n"
 log "Launching usb-backup-main.sh"
 
-systemctl start usb-backup.service
+systemctl start usb-backup-main.service
 
 ################################################################################
 # FINALIZE

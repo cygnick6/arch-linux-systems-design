@@ -38,7 +38,7 @@
 #
 ## EXECUTION CONTEXT ##
 # - A udev rule, configured with the UUID of the target Btrfs-formatted USB
-#       drive, triggers usb-backup.service which executes this script. If the
+#       drive, triggers usb-backup-main.service which executes this script. If the
 #       'backup-due' flag file is set, insert the target USB drive to execute
 #       this script and start a backup
 # - usb-backup-reminder.service also executes this script, in case the USB
