@@ -242,8 +242,10 @@ prepare_local_directories() {
 
 lock_fs() {
 
+    local arg="${1:-}"
+
     local manual=false
-    if [[ "$1" == "manual" ]]; then
+    if [[ "$arg" == "manual" ]]; then
 
         manual=true
 
@@ -273,8 +275,10 @@ lock_fs() {
 
 detect_usb_drive() {
 
+    local arg="${1:-}"
+
     local manual=false
-    if [[ "$1" == "manual" ]]; then
+    if [[ "$arg" == "manual" ]]; then
 
         manual=true
 
@@ -346,8 +350,10 @@ detect_usb_drive() {
 
 mount_usb_drive() {
 
+    local arg="${1:-}"
+
     local manual=false
-    if [[ "$1" == "manual" ]]; then
+    if [[ "$arg" == "manual" ]]; then
 
         manual=true
 
@@ -406,8 +412,10 @@ mount_usb_drive() {
 
 unmount_usb_drive() {
 
+    local arg="${1:-}"
+
     local manual=false
-    if [[ "$1" == "manual" ]]; then
+    if [[ "$arg" == "manual" ]]; then
 
         manual=true
 
@@ -493,8 +501,10 @@ unmount_usb_drive() {
 
 scrub_management() {
 
+    local arg="${1:-}"
+
     local manual=false
-    if [[ "$1" == "manual" ]]; then
+    if [[ "$arg" == "manual" ]]; then
 
         manual=true
 
