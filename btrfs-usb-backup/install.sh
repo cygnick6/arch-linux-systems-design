@@ -22,31 +22,31 @@ install -dm755 /var/log/usb-backup
 install -dm700 /var/lib/usb-backup
 
 # systemd
-install -m644 backup/systemd/*.service /etc/systemd/system/
-install -m644 backup/systemd/*.timer /etc/systemd/system/
+install -m644 systemd/*.service /etc/systemd/system/
+install -m644 systemd/*.timer /etc/systemd/system/
 
 # udev
-install -m644 backup/udev/*.rules /usr/lib/udev/rules.d/
+install -m644 udev/*.rules /usr/lib/udev/rules.d/
 
 # logrotate
-install -m644 backup/logrotate/usb-backup /etc/logrotate.d/
+install -m644 logrotate/usb-backup /etc/logrotate.d/
 
-# config
+# conf
 if [[ ! -f /etc/usb-backup.conf ]]; then
 
-    install -m600 backup/config/usb-backup.conf /etc/usb-backup.conf
+    install -m600 conf/usb-backup.conf /etc/usb-backup.conf
     echo "--> Created /etc/usb-backup.conf (edit required for target UUID)"
 
 fi
 
 # lib
-install -m644 backup/lib/usb-backup-lib.sh "$_LIB_DIR/"
+install -m644 lib/usb-backup-lib.sh "$_LIB_DIR/"
 
 # system scripts
-install -m755 backup/scripts-system/*.sh "$_LIB_DIR/"
+install -m755 scripts-system/*.sh "$_LIB_DIR/"
 
 # user commands
-install -m755 backup/scripts-manual/*.sh "$_BIN_DIR/"
+install -m755 scripts-manual/*.sh "$_BIN_DIR/"
 
 # reload
 systemctl daemon-reexec
