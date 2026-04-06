@@ -125,10 +125,15 @@ run_step() {
 
     local stderr_tmp=$(mktemp)
 
+    local old_err_trap=$(trap -p ERR)
+    trap - ERR
+
     set +e
-    bash -o pipefail -c "$command" 2> >(tee -a "$stderr_tmp" >&2)
+    bash -o pipefail -c "$command" 2>>"$stderr_tmp"
     rc=$?
     set -e
+
+    eval "$old_err_trap"
 
     local end_time=$(date +%s)
     local duration=$(( end_time - start_time ))
