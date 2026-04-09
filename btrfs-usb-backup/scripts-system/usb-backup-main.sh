@@ -213,6 +213,24 @@ reset_staging_dir "$DEST_HOME_SNAP_STAGING_DIR"
 reset_staging_dir "$DEST_HOME_RSYNC_DIR"
 
 ################################################################################
+# REMOTE VERIFICATIONS
+################################################################################
+
+if ! mountpoint -q "$MOUNTPOINT"; then
+
+    error "Mountpoint not active: $MOUNTPOINT"
+    exit 1
+
+fi
+
+if [[ ! -d "$DEST_ROOT_SNAP_STAGING_DIR" ]]; then
+
+    error "Destination snap staging dir missing: $DEST_ROOT_SNAP_STAGING_DIR"
+    exit 1
+
+fi
+
+################################################################################
 # CREATE NEW LOCAL SNAPSHOTS
 ################################################################################
 
