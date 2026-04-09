@@ -107,98 +107,154 @@ error_handler() {
 }
 
 ################################################################################
-# COMMAND WRAPPER
+# COMMAND WRAPPERS
 ################################################################################
 
-run_step() {
+step_start() {
 
-    local description="$1"
-    local command="$2"
-    local disk_path="${3:-}"
+    _STEP_DESC="$1"
+    _STEP_DISC_PATH="${2:-}"
 
-    log "STEP START   | $description"
-    log "STEP CMD     | $command"
+    log "STEP START   | $_STEP_DESC"
 
-    local start_time
-    start_time=$(date +%s)
+    STEP_START_TIME=$(date +%s)
 
-    local disk_before=""
+    if [[ -n "$_STEP_DISC_PATH" ]] && mountpoint -q "$_STEP_DISC_PATH"; then
 
-    if [[ -n "$disk_path" ]] && mountpoint -q "$disk_path"; then
+        STEP_DISK_BEFORE=$(df -h --output=used "$_STEP_DISC_PATH" | tail -1 | xargs)
+        log "STEP DISK    | before=$STEP_DISK_BEFORE path=$_STEP_DISC_PATH"
 
-        disk_before=$(df -h --output=used "$disk_path" | tail -1 | xargs)
-        log "STEP DISK    | before=$disk_before path=$disk_path"
+    else
+
+        STEP_DISK_BEFORE=""
 
     fi
 
-    local stderr_tmp=$(mktemp)
+    STEP_STDERR=$(mktemp)
 
-    # local old_err_trap=$(trap -p ERR)
-    # trap - ERR
-    #
-    # set +e
-    # bash -o pipefail -c "$command" 2>>"$stderr_tmp"
-    # rc=$?
-    # set -e
-    #
-    # eval "$old_err_trap"
+}
 
-    rc=0
+step_end() {
 
-    (
-        trap - ERR
-        set +e
-        bash -o pipefail -c "$command"
-    ) 2>>"$stderr_tmp" || rc=$?
+    local rc="$1"
+    local extra="$2"
 
-    local end_time=$(date +%s)
-    local duration=$(( end_time - start_time ))
+    local end_time duration
+    end_time=$(date +%s)
+    duration=$(( end_time - STEP_START_TIME ))
 
-    if [[ -n "$disk_path" ]] && mountpoint -q "$disk_path"; then
+    if [[ -n "$_STEP_DISC_PATH" ]] && mountpoint -q "$_STEP_DISC_PATH"; then
 
         local disk_after
-        disk_after=$(df -h --output=used "$disk_path" | tail -1 | xargs)
-        log "STEP DISK    | after=$disk_after path=$disk_path"
+        disk_after=$(df -h --output=used "$_STEP_DISC_PATH" | tail -1 | xargs)
+
+        log "STEP DISK    | after=$disk_after path=$_STEP_DISC_PATH"
 
     fi
 
     if (( rc == 0 )); then
 
-        log "STEP SUCCESS | $description | duration=${duration}s"
+        log "STEP SUCCESS | $_STEP_DESC | duration=${duration}s"
 
     else
 
-        error "STEP FAIL    | $description | rc=$rc | duration=${duration}s"
+        error "STEP FAIL    | $_STEP_DESC | $extra | duration=${duration}s"
 
-        if [[ -s "$stderr_tmp" ]]; then
+        if [[ -s "$STEP_STDERR" ]]; then
 
-            error "STEP STDERR  | $description"
-            sed 's/^/stderr: /' "$stderr_tmp" >&2
+            error "STEP STDERR  | $_STEP_DESC"
+            sed 's/^/stderr: /' "$STEP_STDERR" >&2
 
         fi
 
     fi
 
-    rm -f "$stderr_tmp"
-
-    if (( rc != 0 )); then
-
-        error "$description failed"
-
-    fi
+    rm -f "$STEP_STDERR"
 
     return $rc
 
 }
 
-run_step_cmd() {
+run_cmd() {
 
-    local description="$1"
+    local desc="$1"
     local disk_path="$2"
-    local cmd
+    shift 2
 
-    cmd=$(cat)
-    run_step "$description" "$cmd" "$disk_path"
+    log "STEP CMD     | $*"
+
+    step_start "$desc" "$disk_path"
+
+    local rc
+
+    set +e
+    "$@" 2>>"$STEP_STDERR"
+    rc=$?
+    set -e
+
+    step_end "$rc" "rc=$rc"
+
+}
+
+run_pipe() {
+
+    local desc="$1"
+    local disk_path="$2"
+    shift 2
+
+    local -a cmd1=()
+    local -a cmd2=()
+
+    local mode=1
+    for arg in "$@"; do
+
+        if [[ "$arg" == ":::" ]]; then
+
+            mode=2
+            continue
+
+        fi
+
+        if (( mode == 1 )); then
+
+            cmd1+=("$arg")
+
+        else
+
+            cmd2+=("$arg")
+
+        fi
+
+    done
+
+    log "STEP CMD     | ${cmd1[*]} | ${cmd2[*]}"
+
+    step_start "$desc" "$disk_path"
+
+    local rc1 rc2 rc
+
+    set +e
+
+    {
+        "${cmd1[@]}" | "${cmd2[@]}"
+    } 2>>"$STEP_STDERR"
+
+    rc1=${PIPESTATUS[0]}
+    rc2=${PIPESTATUS[1]}
+
+    set -e
+
+    if (( rc1 != 0 || rc2 != 0 )); then
+
+        rc=1
+
+    else
+
+        rc=0
+
+    fi
+
+    step_end "$rc" "send_rc=$rc1 recv_rc=$rc2"
 
 }
 

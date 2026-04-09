@@ -275,20 +275,18 @@ if [[ -n "$_ROOT_PARENT" ]]; then
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-run_step_cmd "Transmit staged @ incrementally" "$MOUNTPOINT" <<EOF
-        btrfs send --compressed-data \
-            -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" |
-        btrfs receive --dump "$DEST_ROOT_SNAP_STAGING_DIR" \
-            >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
-EOF
+        run_pipe "Transmit staged @ incrementally (logged)" "$MOUNTPOINT" \
+            btrfs send --compressed-data \
+                -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" ::: \
+            btrfs receive --dump "$DEST_ROOT_SNAP_STAGING_DIR" \
+                >> "$ROOT_RECEIVE_DUMP_LOG_FILE"
 
     else
 
-run_step_cmd "Transmit staged @ incrementally" "$MOUNTPOINT" <<EOF
-        btrfs send --compressed-data \
-            -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" |
-        btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR"
-EOF
+        run_pipe "Transmit staged @ incrementally" "$MOUNTPOINT" \
+            btrfs send --compressed-data \
+                -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" ::: \
+            btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR"
 
     fi
 
@@ -299,18 +297,16 @@ else
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-run_step_cmd "Transmit staged @ fully" "$MOUNTPOINT" <<EOF
-        btrfs send --compressed-data "$_ROOT_SNAP" |
-        btrfs receive --dump "$DEST_ROOT_SNAP_STAGING_DIR" \
-            >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
-EOF
+        run_pipe "Transmit staged @ fully (logged)" "$MOUNTPOINT" \
+            btrfs send --compressed-data "$_ROOT_SNAP" ::: \
+            btrfs receive --dump "$DEST_ROOT_SNAP_STAGING_DIR" \
+                >> "$ROOT_RECEIVE_DUMP_LOG_FILE"
 
     else
 
-run_step_cmd "Transmit staged @ fully" "$MOUNTPOINT" <<EOF
-        btrfs send --compressed-data "$_ROOT_SNAP" |
-        btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR"
-EOF
+        run_pipe "Transmit staged @ fully" "$MOUNTPOINT" \
+            btrfs send --compressed-data "$_ROOT_SNAP" ::: \
+            btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR"
 
     fi
 
@@ -361,20 +357,18 @@ if [[ -n "$_HOME_PARENT" ]]; then
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-run_step_cmd "Transmit staged @home incrementally" "$MOUNTPOINT" <<EOF
-        btrfs send --compressed-data \
-            -p "$LOCAL_HOME_SNAP_DIR/$_HOME_PARENT" "$_HOME_SNAP" |
-        btrfs receive --dump "$DEST_HOME_SNAP_STAGING_DIR" \
-            >> "$HOME_RECEIVE_DUMP_LOG_FILE" 2>&1
-EOF
+        run_pipe "Transmit staged @home incrementally (logged)" "$MOUNTPOINT" \
+            btrfs send --compressed-data \
+                -p "$LOCAL_HOME_SNAP_DIR/$_HOME_PARENT" "$_HOME_SNAP" ::: \
+            btrfs receive --dump "$DEST_HOME_SNAP_STAGING_DIR" \
+                >> "$HOME_RECEIVE_DUMP_LOG_FILE"
 
     else
 
-run_step_cmd "Transmit staged @home incrementally" "$MOUNTPOINT" <<EOF
-        btrfs send --compressed-data \
-            -p "$LOCAL_HOME_SNAP_DIR/$_HOME_PARENT" "$_HOME_SNAP" |
-        btrfs receive "$DEST_HOME_SNAP_STAGING_DIR"
-EOF
+        run_pipe "Transmit staged @home incrementally" "$MOUNTPOINT" \
+            btrfs send --compressed-data \
+                -p "$LOCAL_HOME_SNAP_DIR/$_HOME_PARENT" "$_HOME_SNAP" ::: \
+            btrfs receive "$DEST_HOME_SNAP_STAGING_DIR"
 
     fi
 
@@ -385,18 +379,16 @@ else
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-run_step_cmd "Transmit staged @home fully" "$MOUNTPOINT" <<EOF
-        btrfs send --compressed-data "$_HOME_SNAP" |
-        btrfs receive --dump "$DEST_HOME_SNAP_STAGING_DIR" \
-            >> "$HOME_RECEIVE_DUMP_LOG_FILE" 2>&1
-EOF
+        run_pipe "Transmit staged @home fully (logged)" "$MOUNTPOINT" \
+            btrfs send --compressed-data "$_HOME_SNAP" ::: \
+            btrfs receive --dump "$DEST_HOME_SNAP_STAGING_DIR" \
+                >> "$HOME_RECEIVE_DUMP_LOG_FILE"
 
     else
 
-run_step_cmd "Transmit staged @home fully" "$MOUNTPOINT" <<EOF
-        btrfs send --compressed-data "$_HOME_SNAP" |
-        btrfs receive "$DEST_HOME_SNAP_STAGING_DIR"
-EOF
+        run_pipe "Transmit staged @home fully" "$MOUNTPOINT" \
+            btrfs send --compressed-data "$_HOME_SNAP" ::: \
+            btrfs receive "$DEST_HOME_SNAP_STAGING_DIR"
 
     fi
 
@@ -443,7 +435,7 @@ if [[ "$HOME_RSYNC" == "true" ]]; then
 
     _RSYNC_EXCLUDES=()
 
-    for dir in "${HOME_RSYNC_IGNORE_DIRS[@]:-}"; do
+    for dir in "${HOME_RSYNC_IGNORE_DIRS[@]}"; do
 
         _RSYNC_EXCLUDES+=(--exclude="./$dir")
 
@@ -475,13 +467,10 @@ if [[ "$HOME_RSYNC" == "true" ]]; then
 
     fi
 
-    _RSYNC_EXCLUDES_CMD="${_RSYNC_EXCLUDES[*]}"
-
-run_step_cmd "Backup file-level @home (rsync)" "$MOUNTPOINT" <<EOF
-    rsync -aHAX --delete-delay --numeric-ids \
-        $_RSYNC_EXCLUDES_CMD \
-        "$_HOME_SNAP/" "$DEST_HOME_RSYNC_STAGING_DIR/"
-EOF
+    run_cmd "Backup file-level @home (rsync)" "$MOUNTPOINT" \
+        rsync -aHAX --delete-delay --numeric-ids \
+            "${_RSYNC_EXCLUDES[@]}" \
+            "$_HOME_SNAP/" "$DEST_HOME_RSYNC_STAGING_DIR/"
 
     sync -f "$DEST_HOME_RSYNC_STAGING_DIR"
 
