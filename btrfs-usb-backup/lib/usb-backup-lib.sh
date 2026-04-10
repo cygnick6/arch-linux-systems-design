@@ -235,9 +235,8 @@ run_pipe() {
 
     set +e
 
-    {
-        "${cmd1[@]}" | "${cmd2[@]}"
-    } 2>>"$STEP_STDERR"
+    "${cmd1[@]}" 2>>"$STEP_STDERR" | \
+    "${cmd2[@]}" 2>>"$STEP_STDERR"
 
     rc1=${PIPESTATUS[0]}
     rc2=${PIPESTATUS[1]}
