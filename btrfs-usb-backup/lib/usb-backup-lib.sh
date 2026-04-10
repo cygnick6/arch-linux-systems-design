@@ -204,6 +204,7 @@ run_pipe() {
 
     local -a cmd1=()
     local -a cmd2=()
+    local dump_log=""
 
     local mode=1
     for arg in "$@"; do
@@ -213,15 +214,24 @@ run_pipe() {
             mode=2
             continue
 
+        elif [[ "$arg" == ":::log" ]]; then
+
+            mode=3
+            continue
+
         fi
 
         if (( mode == 1 )); then
 
             cmd1+=("$arg")
 
-        else
+        elif (( mode == 2 )); then
 
             cmd2+=("$arg")
+
+        elif (( mode == 3 )); then
+
+            dump_log="$arg"
 
         fi
 
@@ -235,8 +245,17 @@ run_pipe() {
 
     set +e
 
-    "${cmd1[@]}" 2>>"$STEP_STDERR" | \
-    "${cmd2[@]}" 2>>"$STEP_STDERR"
+    if [[ -n "$dump_log" ]]; then
+
+        "${cmd1[@]}" 2>>"$STEP_STDERR" | \
+        "${cmd2[@]}" >>"$dump_log" 2>>"$STEP_STDERR"
+
+    else
+
+        "${cmd1[@]}" 2>>"$STEP_STDERR" | \
+        "${cmd2[@]}" 2>>"$STEP_STDERR"
+
+    fi
 
     rc1=${PIPESTATUS[0]}
     rc2=${PIPESTATUS[1]}
