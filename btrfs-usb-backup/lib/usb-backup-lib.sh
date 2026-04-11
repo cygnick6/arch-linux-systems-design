@@ -237,6 +237,8 @@ run_pipe() {
 
     done
 
+    log "DEBUG dump_log=[$dump_log]"
+
     log "STEP CMD     | ${cmd1[*]} | ${cmd2[*]}"
 
     step_start "$desc" "$disk_path"
@@ -265,6 +267,7 @@ run_pipe() {
     if (( rc1 != 0 || rc2 != 0 )); then
 
         rc=1
+        error "run_pipe failed"
         step_end "$rc" "send_rc=$rc1 recv_rc=$rc2"
         exit 1
 
