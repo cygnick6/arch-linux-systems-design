@@ -483,46 +483,55 @@ mount_usb_drive() {
 
     if ! mountpoint -q "$MOUNTPOINT"; then
 
-        mount -o noatime UUID="$BACKUP_UUID" "$MOUNTPOINT"
+        log "Mounting UUID=$BACKUP_UUID at $MOUNTPOINT"
 
-    fi
+        if ! mount -o noatime UUID="$BACKUP_UUID" "$MOUNTPOINT"; then
 
-    _MOUNTED_UUID=$(blkid -s UUID -o value \
-        "$(findmnt -n -o SOURCE "$MOUNTPOINT")")
-    _MOUNTED_LABEL=$(findmnt -n -o LABEL "$MOUNTPOINT")
-
-    if [[ "$_MOUNTED_UUID" != "$BACKUP_UUID" ]]; then
-
-        error "Incorrect device mounted at $MOUNTPOINT. \
-               Label: $_MOUNTED_LABEL; UUID: $_MOUNTED_UUID"
-        printf "Incorrect device mounted at $MOUNTPOINT. \
-               Label: $_MOUNTED_LABEL; UUID: $_MOUNTED_UUID) - exiting\n"
-        exit 1
-
-    fi
-
-    if ! findmnt -n -o FSTYPE "$MOUNTPOINT" | grep -q btrfs; then
-
-        error "Mountpoint file system is not Btrfs after mounting - exiting"
-
-        if [[ "$manual" == "true" ]]; then
-
-            printf "Mountpoint file system is not Btrfs after mounting \
-                    - exiting\n"
+            error "Mount command failed"
+            exit 1
 
         fi
 
+    else
+
+        error "Mount failed: $MOUNTPOINT is not a mountpoint"
         exit 1
 
     fi
 
-    log "Backup drive mounted. Label: $_MOUNTED_LABEL; UUID: $_MOUNTED_UUID"
+    _MOUNTED_SOURCE=$(findmnt -n -o SOURCE "$MOUNTPOINT")
+    _MOUNTED_UUID=$(blkid -s UUID -o value "$_MOUNTED_SOURCE")
+    _MOUNTED_FSTYPE=$(findmnt -n -o FSTYPE "$MOUNTPOINT")
 
-    if [[ "$manual" == "true" ]]; then
+    if [[ "$_MOUNTED_UUID" != "$BACKUP_UUID" ]]; then
 
-        printf "Backup drive mounted\n"
+        error "Wrong device mounted at $MOUNTPOINT (UUID mismatch)"
+        exit 1
 
     fi
+
+    if [[ "$_MOUNTED_FSTYPE" != "btrfs" ]]; then
+
+        error "Mounted filesystem is not Btrfs"
+        exit 1
+
+    fi
+
+    log "Mount verified: UUID=$_MOUNTED_UUID FSTYPE=$_MOUNTED_FSTYPE"
+
+    local test_file="$MOUNTPOINT/.mount-test-$$"
+
+    if ! touch "$test_file"; then
+
+        error "Write test failed on mounted filesystem"
+        exit 1
+
+    fi
+
+    rm -f "$test_file"
+
+    log "Mount write tests passed"
+    log "USB device mounted successfully"
 
 }
 
@@ -549,6 +558,21 @@ reset_staging_dir() {
         mkdir -p "$dir"
 
     fi
+
+}
+
+################################################################################
+# RUNTIME VERIFY MOUNTED FILE SYSTEM
+################################################################################
+
+runtime_mount_check() {
+
+if ! findmnt -n -o FSTYPE "$MOUNTPOINT" | grep -q btrfs; then
+
+    error "Refusing to operate: $MOUNTPOINT is not a mounted Btrfs filesystem"
+    exit 1
+
+fi
 
 }
 

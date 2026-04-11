@@ -285,6 +285,8 @@ find_parent_snapshot() {
 
 log "Initializing @ transmission: $_SNAPSHOT_NAME"
 
+runtime_mount_check
+
 _ROOT_PARENT=$(find_parent_snapshot \
     "$LOCAL_ROOT_SNAP_DIR" "$DEST_ROOT_SNAP_DIR")
 
@@ -366,6 +368,8 @@ log "@ transmission completed: $_SNAPSHOT_NAME"
 ################################################################################
 
 log "Initializing @home transmission: $_SNAPSHOT_NAME"
+
+runtime_mount_check
 
 _HOME_PARENT=$(find_parent_snapshot \
     "$LOCAL_HOME_SNAP_DIR" "$DEST_HOME_SNAP_DIR")
@@ -450,6 +454,8 @@ log "@home transmission completed: $_SNAPSHOT_NAME"
 if [[ "$HOME_RSYNC" == "true" ]]; then
 
     log "Starting rsync of @home ($_SNAPSHOT_NAME)"
+
+    runtime_mount_check
 
     _RSYNC_EXCLUDES=()
 
