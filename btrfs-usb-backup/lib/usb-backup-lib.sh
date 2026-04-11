@@ -265,6 +265,8 @@ run_pipe() {
     if (( rc1 != 0 || rc2 != 0 )); then
 
         rc=1
+        step_end "$rc" "send_rc=$rc1 recv_rc=$rc2"
+        exit 1
 
     else
 
@@ -494,8 +496,7 @@ mount_usb_drive() {
 
     else
 
-        error "Mount failed: $MOUNTPOINT is not a mountpoint"
-        exit 1
+        log "$MOUNTPOINT already mounted"
 
     fi
 
@@ -546,21 +547,21 @@ reset_staging_dir() {
 
     local dir="$1"
 
-    if [[ -d "$dir" ]]; then
+    mkdir -p "$dir"
 
-        while IFS= read -r subvol; do
+    while IFS= read -r subvol; do
 
-            btrfs subvolume delete "$subvol" || true
+        btrfs subvolume delete "$subvol" || true
 
-        done < <(btrfs subvolume list -o "$dir" | awk '{print $NF}' | sed "s|^|$dir/|")
+    done < <(
+        btrfs subvolume list -o "$dir" 2>/dev/null \
+        | awk '{print $NF}' \
+        | sed "s|^|$dir/|"
+    )
 
-        find "$dir" -mindepth 1 -not -type d -delete 2>/dev/null || true
+    find "$dir" -mindepth 1 -exec rm -rf {} + 2>/dev/null || true
 
-    else
-
-        mkdir -p "$dir"
-
-    fi
+    mkdir -p "$dir"
 
 }
 

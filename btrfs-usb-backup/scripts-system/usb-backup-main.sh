@@ -287,6 +287,13 @@ log "Initializing @ transmission: $_SNAPSHOT_NAME"
 
 runtime_mount_check
 
+if [[ ! -d "$DEST_ROOT_SNAP_STAGING_DIR" ]]; then
+
+    error "Staging dir missing before receive: $DEST_ROOT_SNAP_STAGING_DIR"
+    exit 1
+
+fi
+
 _ROOT_PARENT=$(find_parent_snapshot \
     "$LOCAL_ROOT_SNAP_DIR" "$DEST_ROOT_SNAP_DIR")
 
@@ -370,6 +377,13 @@ log "@ transmission completed: $_SNAPSHOT_NAME"
 log "Initializing @home transmission: $_SNAPSHOT_NAME"
 
 runtime_mount_check
+
+if [[ ! -d "$DEST_HOME_SNAP_STAGING_DIR" ]]; then
+
+    error "Staging dir missing before receive: $DEST_HOME_SNAP_STAGING_DIR"
+    exit 1
+
+fi
 
 _HOME_PARENT=$(find_parent_snapshot \
     "$LOCAL_HOME_SNAP_DIR" "$DEST_HOME_SNAP_DIR")
@@ -456,6 +470,13 @@ if [[ "$HOME_RSYNC" == "true" ]]; then
     log "Starting rsync of @home ($_SNAPSHOT_NAME)"
 
     runtime_mount_check
+
+    if [[ ! -d "$DEST_HOME_RSYNC_STAGING_DIR" ]]; then
+
+        error "Staging dir missing before receive: $DEST_HOME_RSYNC_STAGING_DIR"
+        exit 1
+
+    fi
 
     _RSYNC_EXCLUDES=()
 
