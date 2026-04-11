@@ -237,7 +237,7 @@ run_pipe() {
 
     done
 
-    log "DEBUG dump_log=[$dump_log]"
+    # log "DEBUG dump_log=[$dump_log]"
 
     log "STEP CMD     | ${cmd1[*]} | ${cmd2[*]}"
 
@@ -247,17 +247,17 @@ run_pipe() {
 
     set +e
 
-    if [[ -n "$dump_log" ]]; then
+    # if [[ -n "$dump_log" ]]; then
 
-        "${cmd1[@]}" 2>>"$STEP_STDERR" | \
-        "${cmd2[@]}" >>"$dump_log" 2>>"$STEP_STDERR"
+        # "${cmd1[@]}" 2>>"$STEP_STDERR" | \
+        # "${cmd2[@]}" >>"$dump_log" 2>>"$STEP_STDERR"
 
-    else
+    # else
 
         "${cmd1[@]}" 2>>"$STEP_STDERR" | \
         "${cmd2[@]}" 2>>"$STEP_STDERR"
 
-    fi
+    # fi
 
     rc1=${PIPESTATUS[0]}
     rc2=${PIPESTATUS[1]}
