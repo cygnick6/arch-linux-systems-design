@@ -533,6 +533,9 @@ mount_usb_drive() {
     log "Mount write tests passed"
     log "USB device mounted successfully"
 
+    log "Mount table after mount:"
+    findmnt -rno TARGET,SOURCE,FSTYPE | grep "$MOUNTPOINT" || true
+
 }
 
 ################################################################################
