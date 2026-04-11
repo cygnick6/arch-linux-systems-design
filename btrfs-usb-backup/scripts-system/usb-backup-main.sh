@@ -302,11 +302,11 @@ if [[ -n "$_ROOT_PARENT" ]]; then
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-        run_pipe "Transmit staged @ incrementally (logged)" "$MOUNTPOINT" \
-            btrfs send --compressed-data \
-                -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" ::: \
-            btrfs receive --dump "$DEST_ROOT_SNAP_STAGING_DIR" \
-            :::log "$ROOT_RECEIVE_DUMP_LOG_FILE"
+        # run_pipe "Transmit staged @ incrementally (logged)" "$MOUNTPOINT" \
+        #     btrfs send --compressed-data \
+        #         -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" ::: \
+        #     btrfs receive --dump "$DEST_ROOT_SNAP_STAGING_DIR" \
+        #     :::log "$ROOT_RECEIVE_DUMP_LOG_FILE"
 
     else
 
@@ -324,10 +324,10 @@ else
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-        run_pipe "Transmit staged @ fully (logged)" "$MOUNTPOINT" \
-            btrfs send --compressed-data "$_ROOT_SNAP" ::: \
-            btrfs receive --dump "$DEST_ROOT_SNAP_STAGING_DIR" \
-            :::log "$ROOT_RECEIVE_DUMP_LOG_FILE"
+        # run_pipe "Transmit staged @ fully (logged)" "$MOUNTPOINT" \
+        #     btrfs send --compressed-data "$_ROOT_SNAP" ::: \
+        #     btrfs receive --dump "$DEST_ROOT_SNAP_STAGING_DIR" \
+        #     :::log "$ROOT_RECEIVE_DUMP_LOG_FILE"
 
     else
 
@@ -393,11 +393,11 @@ if [[ -n "$_HOME_PARENT" ]]; then
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-        run_pipe "Transmit staged @home incrementally (logged)" "$MOUNTPOINT" \
-            btrfs send --compressed-data \
-                -p "$LOCAL_HOME_SNAP_DIR/$_HOME_PARENT" "$_HOME_SNAP" ::: \
-            btrfs receive --dump "$DEST_HOME_SNAP_STAGING_DIR" \
-            :::log "$HOME_RECEIVE_DUMP_LOG_FILE"
+        # run_pipe "Transmit staged @home incrementally (logged)" "$MOUNTPOINT" \
+        #     btrfs send --compressed-data \
+        #         -p "$LOCAL_HOME_SNAP_DIR/$_HOME_PARENT" "$_HOME_SNAP" ::: \
+        #     btrfs receive --dump "$DEST_HOME_SNAP_STAGING_DIR" \
+        #     :::log "$HOME_RECEIVE_DUMP_LOG_FILE"
 
     else
 
@@ -415,10 +415,10 @@ else
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-        run_pipe "Transmit staged @home fully (logged)" "$MOUNTPOINT" \
-            btrfs send --compressed-data "$_HOME_SNAP" ::: \
-            btrfs receive --dump "$DEST_HOME_SNAP_STAGING_DIR" \
-            :::log "$HOME_RECEIVE_DUMP_LOG_FILE"
+        # run_pipe "Transmit staged @home fully (logged)" "$MOUNTPOINT" \
+        #     btrfs send --compressed-data "$_HOME_SNAP" ::: \
+        #     btrfs receive --dump "$DEST_HOME_SNAP_STAGING_DIR" \
+        #     :::log "$HOME_RECEIVE_DUMP_LOG_FILE"
 
     else
 
