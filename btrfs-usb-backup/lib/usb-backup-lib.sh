@@ -467,7 +467,33 @@ reset_staging_dir() {
 
     if btrfs subvolume show "$dir" &>/dev/null; then
 
-        btrfs subvolume delete -c "$dir"
+        log "Deleting child subvolumes inside staging"
+
+        while IFS= read -r subvol; do
+
+            log "Deleting child subvolume: $subvol"
+
+            btrfs subvolume delete "$subvol" || {
+                error "Failed deleting child subvolume: $subvol"
+
+                exit 1
+
+            }
+        done < <(btrfs subvolume list -o "$dir" | \
+            awk '{print $NF}' | sed "s|^|$dir/|")
+
+        log "Deleting staging subvolume itself"
+
+        btrfs subvolume delete "$dir" || {
+            error "Failed deleting staging subvolume: $dir"
+            exit 1
+        }
+
+        while btrfs subvolume show "$dir" &>/dev/null; do
+
+            sleep 0.2
+
+        done
 
     fi
 

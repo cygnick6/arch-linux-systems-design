@@ -216,7 +216,7 @@ if btrfs subvolume show "$DEST_HOME_RSYNC_STAGING_DIR"; then
 
     btrfs subvolume delete -c "$DEST_HOME_RSYNC_STAGING_DIR" &>/dev/null
 
-    while btrfs subvolume show "$dir" &>/dev/null; do
+    while btrfs subvolume show "$DEST_HOME_RSYNC_STAGING_DIR" &>/dev/null; do
 
         sleep 0.2
 
