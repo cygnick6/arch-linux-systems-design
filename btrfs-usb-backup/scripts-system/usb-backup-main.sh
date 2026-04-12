@@ -216,6 +216,12 @@ if btrfs subvolume show "$DEST_HOME_RSYNC_STAGING_DIR"; then
 
     btrfs subvolume delete -c "$DEST_HOME_RSYNC_STAGING_DIR" &>/dev/null
 
+    while btrfs subvolume show "$dir" &>/dev/null; do
+
+        sleep 0.2
+
+    done
+
 fi
 
 ################################################################################
@@ -300,7 +306,7 @@ if [[ -n "$_ROOT_PARENT" ]]; then
         btrfs send --compressed-data \
             -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" | \
         btrfs receive --dump "$DEST_ROOT_SNAP_STAGING_DIR" \
-            >> "$ROOT_RECEIVE_DUMP_LOG_FILE"
+            >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
 
         _RC=$?
 
@@ -363,7 +369,7 @@ else
 
         btrfs send --compressed-data "$_ROOT_SNAP" | \
         btrfs receive --dump "$DEST_ROOT_SNAP_STAGING_DIR" \
-            >> "$ROOT_RECEIVE_DUMP_LOG_FILE"
+            >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
 
         _RC=$?
 
@@ -482,7 +488,7 @@ if [[ -n "$_HOME_PARENT" ]]; then
         btrfs send --compressed-data \
             -p "$LOCAL_HOME_SNAP_DIR/$_HOME_PARENT" "$_HOME_SNAP" | \
         btrfs receive --dump "$DEST_HOME_SNAP_STAGING_DIR" \
-            >> "$HOME_RECEIVE_DUMP_LOG_FILE"
+            >> "$HOME_RECEIVE_DUMP_LOG_FILE" 2>&1
 
         _RC=$?
 
@@ -545,7 +551,7 @@ else
 
         btrfs send --compressed-data "$_HOME_SNAP" | \
         btrfs receive --dump "$DEST_HOME_SNAP_STAGING_DIR" \
-            >> "$HOME_RECEIVE_DUMP_LOG_FILE"
+            >> "$HOME_RECEIVE_DUMP_LOG_FILE" 2>&1
 
         _RC=$?
 
@@ -711,6 +717,12 @@ if [[ "$HOME_RSYNC" == "true" ]]; then
         log "Deleting previous @home rsync backup"
 
         btrfs subvolume delete -c "$DEST_HOME_RSYNC_DIR"
+
+        while btrfs subvolume show "$dir" &>/dev/null; do
+
+            sleep 0.2
+
+        done
 
         log "Deleted previous @home rsync backup"
 
