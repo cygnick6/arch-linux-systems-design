@@ -573,18 +573,25 @@ reset_staging_dir() {
 
     mkdir -p "$dir"
 
+    if btrfs subvolume show "$dir" &>/dev/null; then
+
+        error "Staging dir itself is a subvolume — refusing to operate"
+        exit 1
+
+    fi
+
     local fstype
     fstype=$(findmnt -n -o FSTYPE -T "$dir" 2>/dev/null || true)
 
     if [[ "$fstype" != "btrfs" ]]; then
 
         error "reset_staging_dir: $dir is not on btrfs (detected: $fstype)"
-        return 1
+        exit 1
 
     fi
 
     mapfile -t subvols < <(
-        btrfs subvolume list -o "$dir" 2>/dev/null \
+        btrfs subvolume list "$dir" 2>/dev/null \
         | awk '{print $NF}' \
         | sed "s|^|$dir/|" \
         | sort -r
@@ -595,19 +602,32 @@ reset_staging_dir() {
         if btrfs subvolume show "$subvol" &>/dev/null; then
 
             log "Deleting subvolume: $subvol"
-            btrfs subvolume delete "$subvol" \
-                || error "Failed to delete subvolume: $subvol"
+
+            if ! btrfs subvolume delete "$subvol"; then
+
+                error "Failed to delete subvolume: $subvol"
+                exit 1
+
+            fi
 
         fi
 
     done
 
-    find "$dir" -mindepth 1 -exec rm -rf {} + 2>/dev/null || true
+    find "$dir" -mindepth 1 -not -type d -delete 2>/dev/null || true
+    find "$dir" -mindepth 1 -type d -empty -delete 2>/dev/null || true
 
     if find "$dir" -mindepth 1 -print -quit | grep -q .; then
 
         error "reset_staging_dir: directory not empty after cleanup"
-        return 1
+
+        find "$dir" -mindepth 1 -print | head -20 | while read -r p; do
+
+            error "Remaining: $p"
+
+        done
+
+        exit 1
 
     fi
 
