@@ -294,6 +294,13 @@ if [[ ! -d "$DEST_ROOT_SNAP_STAGING_DIR" ]]; then
 
 fi
 
+if [[ -e "$DEST_ROOT_SNAP_STAGING_DIR/$_SNAPSHOT_NAME" ]]; then
+
+    error "Staging path already exists before receive: $_SNAPSHOT_NAME"
+    exit 1
+
+fi
+
 _ROOT_PARENT=$(find_parent_snapshot \
     "$LOCAL_ROOT_SNAP_DIR" "$DEST_ROOT_SNAP_DIR")
 
@@ -343,6 +350,9 @@ fi
 
 sync -f "$DEST_ROOT_SNAP_STAGING_DIR"
 
+log "DEBUG: contents of staging dir after receive"
+find "$DEST_ROOT_SNAP_STAGING_DIR" -maxdepth 2 -print
+
 log "Checking received @"
 
 _STAGED_ROOT_SNAP_PATH="$DEST_ROOT_SNAP_STAGING_DIR/$_SNAPSHOT_NAME"
@@ -381,6 +391,13 @@ runtime_mount_check
 if [[ ! -d "$DEST_HOME_SNAP_STAGING_DIR" ]]; then
 
     error "Staging dir missing before receive: $DEST_HOME_SNAP_STAGING_DIR"
+    exit 1
+
+fi
+
+if [[ -e "$DEST_HOME_SNAP_STAGING_DIR/$_SNAPSHOT_NAME" ]]; then
+
+    error "Staging path already exists before receive: $_SNAPSHOT_NAME"
     exit 1
 
 fi

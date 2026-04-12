@@ -576,9 +576,12 @@ reset_staging_dir() {
 
     mkdir -p "$dir"
 
-    if ! findmnt -n -o FSTYPE "$dir" | grep -q btrfs; then
+    local fstype
+    fstype=$(findmnt -n -o FSTYPE -T "$dir" 2>/dev/null || true)
 
-        error "reset_staging_dir: $dir is not on btrfs"
+    if [[ "$fstype" != "btrfs" ]]; then
+
+        error "reset_staging_dir: $dir is not on btrfs (detected: $fstype)"
         return 1
 
     fi
