@@ -250,6 +250,9 @@ run_pipe() {
 
     log "STEP CMD     | ${cmd1[*]} | ${cmd2[*]}"
 
+    log "DEBUG ROOT_SNAP=$_ROOT_SNAP"
+    ls -ld "$_ROOT_SNAP" || error "Snapshot missing before send"
+
     step_start "$desc" "$disk_path"
 
     local rc1 rc2 rc
@@ -268,16 +271,18 @@ run_pipe() {
 
     # fi
 
-    if (( ${#PIPESTATUS[@]} < 2 )); then
+    local ps=("${PIPESTATUS[@]}")
 
-        error "Pipeline malformed: expected 2 commands"
-        step_end 1 "invalid pipeline"
-        exit 1
+    rc1=${ps[0]:-1}
+    rc2=${ps[1]:-1}
+
+    if (( ${#ps[@]} < 2 )); then
+
+        error "Pipeline collapsed (only ${#ps[@]} process)"
+        error "cmd1=(${cmd1[*]})"
+        error "cmd2=(${cmd2[*]})"
 
     fi
-
-    rc1=${PIPESTATUS[0]}
-    rc2=${PIPESTATUS[1]}
 
     set -e
 
