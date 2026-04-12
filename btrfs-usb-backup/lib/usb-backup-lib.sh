@@ -117,20 +117,18 @@ step_start() {
 
     log "STEP START   | $_STEP_DESC"
 
-    STEP_START_TIME=$(date +%s)
+    _STEP_START_TIME=$(date +%s)
 
     if [[ -n "$_STEP_DISC_PATH" ]] && mountpoint -q "$_STEP_DISC_PATH"; then
 
-        STEP_DISK_BEFORE=$(df -h --output=used "$_STEP_DISC_PATH" | tail -1 | xargs)
-        log "STEP DISK    | before=$STEP_DISK_BEFORE path=$_STEP_DISC_PATH"
+        _STEP_DISC_BEFORE=$(df -h --output=used "$_STEP_DISC_PATH" | tail -1 | xargs)
+        log "STEP DISK    | before=$_STEP_DISC_BEFORE path=$_STEP_DISC_PATH"
 
     else
 
-        STEP_DISK_BEFORE=""
+        _STEP_DISC_BEFORE=""
 
     fi
-
-    STEP_STDERR=$(mktemp)
 
 }
 
@@ -141,7 +139,7 @@ step_end() {
 
     local end_time duration
     end_time=$(date +%s)
-    duration=$(( end_time - STEP_START_TIME ))
+    duration=$(( end_time - _STEP_START_TIME ))
 
     if [[ -n "$_STEP_DISC_PATH" ]] && mountpoint -q "$_STEP_DISC_PATH"; then
 
@@ -160,148 +158,147 @@ step_end() {
 
         error "STEP FAIL    | $_STEP_DESC | $extra | duration=${duration}s"
 
-        if [[ -s "$STEP_STDERR" ]]; then
-
-            error "STEP STDERR  | $_STEP_DESC"
-            sed 's/^/stderr: /' "$STEP_STDERR" >&2
-
-        fi
-
     fi
-
-    rm -f "$STEP_STDERR"
 
     return $rc
 
 }
 
-run_cmd() {
-
-    local desc="$1"
-    local disk_path="$2"
-    shift 2
-
-    log "STEP CMD     | $*"
-
-    step_start "$desc" "$disk_path"
-
-    local rc
-
-    set +e
-    "$@" 2>>"$STEP_STDERR"
-    rc=$?
-    set -e
-
-    step_end "$rc" "rc=$rc"
-
-}
-
-run_pipe() {
-
-    local desc="$1"
-    local disk_path="$2"
-    shift 2
-
-    local -a cmd1=()
-    local -a cmd2=()
-    local dump_log=""
-
-    local mode=1
-    for arg in "$@"; do
-
-        if [[ "$arg" == ":::log" ]]; then
-
-            mode=3
-            continue
-
-        elif [[ "$arg" == ":::" ]]; then
-
-            mode=2
-            continue
-
-        fi
-
-        if (( mode == 1 )); then
-
-            cmd1+=("$arg")
-
-        elif (( mode == 2 )); then
-
-            cmd2+=("$arg")
-
-        elif (( mode == 3 )); then
-
-            dump_log="$arg"
-
-        fi
-
-    done
-
-    if (( ${#cmd1[@]} == 0 || ${#cmd2[@]} == 0 )); then
-
-        error "run_pipe: invalid command split"
-        error "cmd1=(${cmd1[*]})"
-        error "cmd2=(${cmd2[*]})"
-        exit 1
-
-    fi
-
-    # log "DEBUG dump_log=[$dump_log]"
-
-    log "STEP CMD     | ${cmd1[*]} | ${cmd2[*]}"
-
-    log "DEBUG ROOT_SNAP=$_ROOT_SNAP"
-    ls -ld "$_ROOT_SNAP" || error "Snapshot missing before send"
-
-    step_start "$desc" "$disk_path"
-
-    local rc1 rc2 rc
-
-    set +e
-
-    # if [[ -n "$dump_log" ]]; then
-
-        # "${cmd1[@]}" 2>>"$STEP_STDERR" | \
-        # "${cmd2[@]}" >>"$dump_log" 2>>"$STEP_STDERR"
-
-    # else
-
-        "${cmd1[@]}" 2>>"$STEP_STDERR" | \
-        "${cmd2[@]}" 2>>"$STEP_STDERR"
-
-    # fi
-
-    local ps=("${PIPESTATUS[@]}")
-
-    rc1=${ps[0]:-1}
-    rc2=${ps[1]:-1}
-
-    if (( ${#ps[@]} < 2 )); then
-
-        error "Pipeline collapsed (only ${#ps[@]} process)"
-        error "cmd1=(${cmd1[*]})"
-        error "cmd2=(${cmd2[*]})"
-
-    fi
-
-    set -e
-
-    if (( rc1 != 0 || rc2 != 0 )); then
-
-        rc=1
-        error "run_pipe failed"
-        step_end "$rc" "send_rc=$rc1 recv_rc=$rc2"
-        exit 1
-
-    else
-
-        rc=0
-
-    fi
-
-    step_end "$rc" "send_rc=$rc1 recv_rc=$rc2"
-
-}
+# run_cmd() {
+#
+#     local desc="$1"
+#     local disk_path="$2"
+#     shift 2
+#
+#     log "STEP CMD     | $*"
+#
+#     step_start "$desc" "$disk_path"
+#
+#     local rc
+#
+#     set +e
+#     "$@" 2>>"$STEP_STDERR"
+#     rc=$?
+#     set -e
+#
+#     step_end "$rc" "rc=$rc"
+#
+# }
+#
+# run_pipe() {
+#
+#     local desc="$1"
+#     local disk_path="$2"
+#     shift 2
+#
+#     local -a cmd1=()
+#     local -a cmd2=()
+#     local dump_log=""
+#
+#     local mode=1
+#     for arg in "$@"; do
+#
+#         if [[ "$arg" == ":::log" ]]; then
+#
+#             mode=3
+#             continue
+#
+#         elif [[ "$arg" == ":::" ]]; then
+#
+#             mode=2
+#             continue
+#
+#         fi
+#
+#         if (( mode == 1 )); then
+#
+#             cmd1+=("$arg")
+#
+#         elif (( mode == 2 )); then
+#
+#             cmd2+=("$arg")
+#
+#         elif (( mode == 3 )); then
+#
+#             dump_log="$arg"
+#
+#         fi
+#
+#     done
+#
+#     log "DEBUG cmd1: ${cmd1[*]}"
+#     log "DEBUG cmd2: ${cmd2[*]}"
+#
+#     if (( ${#cmd1[@]} == 0 || ${#cmd2[@]} == 0 )); then
+#
+#         error "run_pipe: invalid command split"
+#         error "cmd1=(${cmd1[*]})"
+#         error "cmd2=(${cmd2[*]})"
+#         exit 1
+#
+#     fi
+#
+#     # log "DEBUG dump_log=[$dump_log]"
+#
+#     log "STEP CMD     | ${cmd1[*]} | ${cmd2[*]}"
+#
+#     log "DEBUG ROOT_SNAP=$_ROOT_SNAP"
+#     ls -ld "$_ROOT_SNAP" || error "Snapshot missing before send"
+#
+#     step_start "$desc" "$disk_path"
+#
+#     local rc1 rc2 rc
+#
+#     set +
+#     set -o pipefail
+#
+#     # if [[ -n "$dump_log" ]]; then
+#
+#         # "${cmd1[@]}" 2>>"$STEP_STDERR" | \
+#         # "${cmd2[@]}" >>"$dump_log" 2>>"$STEP_STDERR"
+#
+#     # else
+#
+#         "${cmd1[@]}" 2>>"$STEP_STDERR" | \
+#         "${cmd2[@]}" 2>>"$STEP_STDERR"
+#
+#     # fi
+#
+#     set +o pipefail
+#
+#     rc=$?
+#
+#     local ps=("${PIPESTATUS[@]}")
+#
+#     rc1=${ps[0]:-1}
+#     rc2=${ps[1]:-1}
+#
+#     if (( ${#ps[@]} < 2 )); then
+#
+#         error "Pipeline collapsed (only ${#ps[@]} process)"
+#         error "cmd1=(${cmd1[*]})"
+#         error "cmd2=(${cmd2[*]})"
+#
+#     fi
+#
+#     set -e
+#
+#     if (( rc1 != 0 || rc2 != 0 )); then
+#
+#         rc=1
+#         error "run_pipe failed"
+#         step_end "$rc" "send_rc=$rc1 recv_rc=$rc2"
+#         exit 1
+#
+#     else
+#
+#         rc=0
+#
+#     fi
+#
+#     step_end "$rc" "send_rc=$rc1 recv_rc=$rc2"
+#
+# }
 
 ################################################################################
 # NOTIFICATION FUNCTION
