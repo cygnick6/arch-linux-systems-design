@@ -164,142 +164,6 @@ step_end() {
 
 }
 
-# run_cmd() {
-#
-#     local desc="$1"
-#     local disk_path="$2"
-#     shift 2
-#
-#     log "STEP CMD     | $*"
-#
-#     step_start "$desc" "$disk_path"
-#
-#     local rc
-#
-#     set +e
-#     "$@" 2>>"$STEP_STDERR"
-#     rc=$?
-#     set -e
-#
-#     step_end "$rc" "rc=$rc"
-#
-# }
-#
-# run_pipe() {
-#
-#     local desc="$1"
-#     local disk_path="$2"
-#     shift 2
-#
-#     local -a cmd1=()
-#     local -a cmd2=()
-#     local dump_log=""
-#
-#     local mode=1
-#     for arg in "$@"; do
-#
-#         if [[ "$arg" == ":::log" ]]; then
-#
-#             mode=3
-#             continue
-#
-#         elif [[ "$arg" == ":::" ]]; then
-#
-#             mode=2
-#             continue
-#
-#         fi
-#
-#         if (( mode == 1 )); then
-#
-#             cmd1+=("$arg")
-#
-#         elif (( mode == 2 )); then
-#
-#             cmd2+=("$arg")
-#
-#         elif (( mode == 3 )); then
-#
-#             dump_log="$arg"
-#
-#         fi
-#
-#     done
-#
-#     log "DEBUG cmd1: ${cmd1[*]}"
-#     log "DEBUG cmd2: ${cmd2[*]}"
-#
-#     if (( ${#cmd1[@]} == 0 || ${#cmd2[@]} == 0 )); then
-#
-#         error "run_pipe: invalid command split"
-#         error "cmd1=(${cmd1[*]})"
-#         error "cmd2=(${cmd2[*]})"
-#         exit 1
-#
-#     fi
-#
-#     # log "DEBUG dump_log=[$dump_log]"
-#
-#     log "STEP CMD     | ${cmd1[*]} | ${cmd2[*]}"
-#
-#     log "DEBUG ROOT_SNAP=$_ROOT_SNAP"
-#     ls -ld "$_ROOT_SNAP" || error "Snapshot missing before send"
-#
-#     step_start "$desc" "$disk_path"
-#
-#     local rc1 rc2 rc
-#
-#     set +
-#     set -o pipefail
-#
-#     # if [[ -n "$dump_log" ]]; then
-#
-#         # "${cmd1[@]}" 2>>"$STEP_STDERR" | \
-#         # "${cmd2[@]}" >>"$dump_log" 2>>"$STEP_STDERR"
-#
-#     # else
-#
-#         "${cmd1[@]}" 2>>"$STEP_STDERR" | \
-#         "${cmd2[@]}" 2>>"$STEP_STDERR"
-#
-#     # fi
-#
-#     set +o pipefail
-#
-#     rc=$?
-#
-#     local ps=("${PIPESTATUS[@]}")
-#
-#     rc1=${ps[0]:-1}
-#     rc2=${ps[1]:-1}
-#
-#     if (( ${#ps[@]} < 2 )); then
-#
-#         error "Pipeline collapsed (only ${#ps[@]} process)"
-#         error "cmd1=(${cmd1[*]})"
-#         error "cmd2=(${cmd2[*]})"
-#
-#     fi
-#
-#     set -e
-#
-#     if (( rc1 != 0 || rc2 != 0 )); then
-#
-#         rc=1
-#         error "run_pipe failed"
-#         step_end "$rc" "send_rc=$rc1 recv_rc=$rc2"
-#         exit 1
-#
-#     else
-#
-#         rc=0
-#
-#     fi
-#
-#     step_end "$rc" "send_rc=$rc1 recv_rc=$rc2"
-#
-# }
-
 ################################################################################
 # NOTIFICATION FUNCTION
 ################################################################################
@@ -562,6 +426,29 @@ mount_usb_drive() {
 }
 
 ################################################################################
+# CREATE DESTINATION FUNCTION
+################################################################################
+
+create_destination() {
+    local su="$1"
+
+    if btrfs subvolume show "$su" &>/dev/null; then
+
+        return
+
+    fi
+
+    if [[ -e "$su" ]]; then
+
+        error "Path exists but is not a subvolume: $su"
+        exit 1
+
+    fi
+
+    btrfs subvolume create "$su"
+}
+
+################################################################################
 # RESET REMOTE STAGING FUNCTION
 ################################################################################
 
@@ -569,69 +456,47 @@ reset_staging_dir() {
 
     local dir="$1"
 
-    log "Resetting staging dir: $dir"
+    log "Resetting staging subvolume: $dir"
 
-    mkdir -p "$dir"
+    if [[ -e "$dir" ]] && ! btrfs subvolume show "$dir" &>/dev/null; then
+
+        error "Staging path exists but is not a subvolume: $dir"
+        exit 1
+
+    fi
 
     if btrfs subvolume show "$dir" &>/dev/null; then
 
-        error "Staging dir itself is a subvolume — refusing to operate"
-        exit 1
+        btrfs subvolume delete -c "$dir"
 
     fi
 
-    local fstype
-    fstype=$(findmnt -n -o FSTYPE -T "$dir" 2>/dev/null || true)
+    btrfs subvolume create "$dir"
 
-    if [[ "$fstype" != "btrfs" ]]; then
+    log "Staging reset complete: $dir"
 
-        error "reset_staging_dir: $dir is not on btrfs (detected: $fstype)"
-        exit 1
+}
 
-    fi
+################################################################################
+# SORT SUBVOLS FUNCTION
+################################################################################
 
-    mapfile -t subvols < <(
-        btrfs subvolume list "$dir" 2>/dev/null \
-        | awk '{print $NF}' \
-        | sed "s|^|$dir/|" \
-        | sort -r
-    )
+get_sorted_subvol_names() {
 
-    for subvol in "${subvols[@]}"; do
+    local dir="$1"
+    local -a out=()
+    local s
 
-        if btrfs subvolume show "$subvol" &>/dev/null; then
+    for s in "$dir"/*; do
 
-            log "Deleting subvolume: $subvol"
+        [[ -d "$s" ]] || continue
+        btrfs subvolume show "$s" &>/dev/null || continue
 
-            if ! btrfs subvolume delete "$subvol"; then
-
-                error "Failed to delete subvolume: $subvol"
-                exit 1
-
-            fi
-
-        fi
+        out+=("${s##*/}")
 
     done
 
-    find "$dir" -mindepth 1 -not -type d -delete 2>/dev/null || true
-    find "$dir" -mindepth 1 -type d -empty -delete 2>/dev/null || true
-
-    if find "$dir" -mindepth 1 -print -quit | grep -q .; then
-
-        error "reset_staging_dir: directory not empty after cleanup"
-
-        find "$dir" -mindepth 1 -print | head -20 | while read -r p; do
-
-            error "Remaining: $p"
-
-        done
-
-        exit 1
-
-    fi
-
-    log "Staging dir reset complete: $dir"
+    IFS=$'\n' printf '%s\n' "${out[@]}" | sort
 
 }
 
@@ -669,14 +534,14 @@ unmount_usb_drive() {
 
     if mountpoint -q "$MOUNTPOINT"; then
 
-        if umount "$MOUNTPOINT"; then
+        # if umount "$MOUNTPOINT"; then
 
             log "Backup drive unmounted successfully"
             notify "Unmount successful"
 
             if [[ "$manual" == "true" ]]; then
 
-                printf "Backup drive umounted successfully\n"
+                printf "Backup drive unmounted successfully\n"
 
             fi
 
@@ -692,7 +557,7 @@ unmount_usb_drive() {
 
                 if [[ "$manual" == "true" ]]; then
 
-                    printf "Backup drive umounted successfully - second attempt\n"
+                    printf "Backup drive unmounted successfully - second attempt\n"
 
                 fi
 
@@ -707,7 +572,7 @@ unmount_usb_drive() {
 
                     if [[ "$manual" == "true" ]]; then
 
-                        printf "Backup drive umounted lazily - \
+                        printf "Backup drive umnounted lazily - \
                                 two failed normal unmount attempts prior\n"
 
                     fi

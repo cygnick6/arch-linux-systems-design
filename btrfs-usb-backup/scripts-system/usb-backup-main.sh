@@ -204,29 +204,17 @@ mount_usb_drive
 # PREPARE REMOTE DIRECTORIES
 ################################################################################
 
-mkdir -p "$DEST_ROOT_SNAP_DIR" "$DEST_ROOT_SNAP_STAGING_DIR" \
-         "$DEST_HOME_SNAP_DIR" "$DEST_HOME_SNAP_STAGING_DIR" \
-         "$DEST_HOME_RSYNC_DIR"
+mkdir -p "$DEST_DIR"
+
+create_destination "$DEST_ROOT_SNAP_DIR"
+create_destination "$DEST_HOME_SNAP_DIR"
 
 reset_staging_dir "$DEST_ROOT_SNAP_STAGING_DIR"
 reset_staging_dir "$DEST_HOME_SNAP_STAGING_DIR"
-reset_staging_dir "$DEST_HOME_RSYNC_DIR"
 
-################################################################################
-# REMOTE VERIFICATIONS
-################################################################################
+if btrfs subvolume show "$DEST_HOME_RSYNC_STAGING_DIR"; then
 
-if ! mountpoint -q "$MOUNTPOINT"; then
-
-    error "Mountpoint not active: $MOUNTPOINT"
-    exit 1
-
-fi
-
-if [[ ! -d "$DEST_ROOT_SNAP_STAGING_DIR" ]]; then
-
-    error "Destination snap staging dir missing: $DEST_ROOT_SNAP_STAGING_DIR"
-    exit 1
+    btrfs subvolume delete -c "$DEST_HOME_RSYNC_STAGING_DIR"
 
 fi
 
@@ -256,18 +244,14 @@ find_parent_snapshot() {
     local local_dir="$1"
     local remote_dir="$2"
 
+    local snap
     local parent=""
-    local s snap
 
-    for s in "$local_dir"/*; do
-
-        snaps+=("${s##*/}")
-
-    done
+    mapfile -t snaps < <(get_sorted_subvol_names "$local_dir")
 
     for snap in "${snaps[@]}"; do
 
-        if [[ -d "$remote_dir/$snap" ]]; then
+        if btrfs subvolume show "$remote_dir/$snap" &>/dev/null; then
 
             parent="$snap"
 
@@ -327,6 +311,13 @@ if [[ -n "$_ROOT_PARENT" ]]; then
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
 
+        if (( _RC1 != 0 || _RC2 != 0 )); then
+
+            error "Pipeline failed: send_rc=$_RC1 recv_rc=$_RC2"
+            exit 1
+
+        fi
+
         step_end "$_RC" "send_rc=$_RC1 recv_rc=$_RC2"
 
     else
@@ -348,11 +339,16 @@ if [[ -n "$_ROOT_PARENT" ]]; then
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
 
+        if (( _RC1 != 0 || _RC2 != 0 )); then
+
+            error "Pipeline failed: send_rc=$_RC1 recv_rc=$_RC2"
+            exit 1
+
+        fi
+
         step_end "$_RC" "send_rc=$_RC1 recv_rc=$_RC2"
 
     fi
-
-    step_end TODO
 
     log "Finished staged @ incremental send: $_SNAPSHOT_NAME"
 
@@ -378,6 +374,13 @@ else
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
 
+        if (( _RC1 != 0 || _RC2 != 0 )); then
+
+            error "Pipeline failed: send_rc=$_RC1 recv_rc=$_RC2"
+            exit 1
+
+        fi
+
         step_end "$_RC" "send_rc=$_RC1 recv_rc=$_RC2"
 
     else
@@ -397,6 +400,13 @@ else
 
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
+
+        if (( _RC1 != 0 || _RC2 != 0 )); then
+
+            error "Pipeline failed: send_rc=$_RC1 recv_rc=$_RC2"
+            exit 1
+
+        fi
 
         step_end "$_RC" "send_rc=$_RC1 recv_rc=$_RC2"
 
@@ -433,7 +443,11 @@ fi
 log "Staged received @ passed checks"
 log "Unstaging received @"
 
-mv "$_STAGED_ROOT_SNAP_PATH" "$DEST_ROOT_SNAP_DIR/"
+btrfs subvolume snapshot \
+    "$_STAGED_ROOT_SNAP_PATH" \
+    "$DEST_ROOT_SNAP_DIR/$_SNAPSHOT_NAME"
+
+btrfs subvolume delete -c "$_STAGED_ROOT_SNAP_PATH"
 
 log "Finished unstaging received @"
 log "@ transmission completed: $_SNAPSHOT_NAME"
@@ -445,13 +459,6 @@ log "@ transmission completed: $_SNAPSHOT_NAME"
 log "Initializing @home transmission: $_SNAPSHOT_NAME"
 
 runtime_mount_check
-
-if [[ ! -d "$DEST_HOME_SNAP_STAGING_DIR" ]]; then
-
-    error "Staging dir missing before receive: $DEST_HOME_SNAP_STAGING_DIR"
-    exit 1
-
-fi
 
 if [[ -e "$DEST_HOME_SNAP_STAGING_DIR/$_SNAPSHOT_NAME" ]]; then
 
@@ -486,6 +493,13 @@ if [[ -n "$_HOME_PARENT" ]]; then
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
 
+        if (( _RC1 != 0 || _RC2 != 0 )); then
+
+            error "Pipeline failed: send_rc=$_RC1 recv_rc=$_RC2"
+            exit 1
+
+        fi
+
         step_end "$_RC" "send_rc=$_RC1 recv_rc=$_RC2"
 
     else
@@ -506,6 +520,13 @@ if [[ -n "$_HOME_PARENT" ]]; then
 
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
+
+        if (( _RC1 != 0 || _RC2 != 0 )); then
+
+            error "Pipeline failed: send_rc=$_RC1 recv_rc=$_RC2"
+            exit 1
+
+        fi
 
         step_end "$_RC" "send_rc=$_RC1 recv_rc=$_RC2"
 
@@ -535,6 +556,13 @@ else
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
 
+        if (( _RC1 != 0 || _RC2 != 0 )); then
+
+            error "Pipeline failed: send_rc=$_RC1 recv_rc=$_RC2"
+            exit 1
+
+        fi
+
         step_end "$_RC" "send_rc=$_RC1 recv_rc=$_RC2"
 
     else
@@ -554,6 +582,13 @@ else
 
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
+
+        if (( _RC1 != 0 || _RC2 != 0 )); then
+
+            error "Pipeline failed: send_rc=$_RC1 recv_rc=$_RC2"
+            exit 1
+
+        fi
 
         step_end "$_RC" "send_rc=$_RC1 recv_rc=$_RC2"
 
@@ -587,7 +622,11 @@ fi
 log "Staged received @home passed checks"
 log "Unstaging received @home"
 
-mv "$_STAGED_HOME_SNAP_PATH" "$DEST_HOME_SNAP_DIR/"
+btrfs subvolume snapshot \
+    "$_STAGED_HOME_SNAP_PATH" \
+    "$DEST_HOME_SNAP_DIR/$_SNAPSHOT_NAME"
+
+btrfs subvolume delete -c "$_STAGED_HOME_SNAP_PATH"
 
 log "Finished unstaging received @home"
 log "@home transmission completed: $_SNAPSHOT_NAME"
@@ -602,10 +641,21 @@ if [[ "$HOME_RSYNC" == "true" ]]; then
 
     runtime_mount_check
 
-    if [[ ! -d "$DEST_HOME_RSYNC_STAGING_DIR" ]]; then
+    log "Preparing rsync staging"
 
-        error "Staging dir missing before receive: $DEST_HOME_RSYNC_STAGING_DIR"
-        exit 1
+    if btrfs subvolume show "$DEST_HOME_RSYNC_DIR" &>/dev/null; then
+
+        log "Existing rsync backup found - snapshotting to staging area"
+
+        btrfs subvolume snapshot \
+            "$DEST_HOME_RSYNC_DIR" \
+            "$DEST_HOME_RSYNC_STAGING_DIR"
+
+    else
+
+        log "No previous rsync backup - creating empty staging area"
+
+        btrfs subvolume create "$DEST_HOME_RSYNC_STAGING_DIR"
 
     fi
 
@@ -627,22 +677,6 @@ if [[ "$HOME_RSYNC" == "true" ]]; then
 
     fi
 
-    if [[ -d "$DEST_HOME_RSYNC_DIR" ]]; then
-
-        log "Creating snapshot staging area for rsync"
-
-        btrfs subvolume snapshot \
-            "$DEST_HOME_RSYNC_DIR" \
-            "$DEST_HOME_RSYNC_STAGING_DIR"
-
-    else
-
-        log "No existing @home rsync backup - creating new staging directory"
-
-        mkdir -p "$DEST_HOME_RSYNC_STAGING_DIR"
-
-    fi
-
     step_start "Backup file-level @home (rsync)" "$MOUNTPOINT"
 
     set +e
@@ -659,7 +693,7 @@ if [[ "$HOME_RSYNC" == "true" ]]; then
 
     sync -f "$DEST_HOME_RSYNC_STAGING_DIR"
 
-    log "Checking @home rsync backup"
+    log "Checking staged @home rsync backup"
 
     if [[ ! -d "$DEST_HOME_RSYNC_STAGING_DIR" ]] || \
     ! find "$DEST_HOME_RSYNC_STAGING_DIR" \
@@ -670,13 +704,13 @@ if [[ "$HOME_RSYNC" == "true" ]]; then
 
     fi
 
-    log "@home rsync backup passed checks"
+    log "@Staged home rsync backup passed checks"
 
     if btrfs subvolume show "$DEST_HOME_RSYNC_DIR" &>/dev/null; then
 
         log "Deleting previous @home rsync backup"
 
-        btrfs subvolume delete "$DEST_HOME_RSYNC_DIR"
+        btrfs subvolume delete -c "$DEST_HOME_RSYNC_DIR"
 
         log "Deleted previous @home rsync backup"
 
@@ -688,7 +722,11 @@ if [[ "$HOME_RSYNC" == "true" ]]; then
 
     log "Unstaging @home rsync backup"
 
-    mv "$DEST_HOME_RSYNC_STAGING_DIR" "$DEST_HOME_RSYNC_DIR"
+    btrfs subvolume snapshot \
+        "$DEST_HOME_RSYNC_STAGING_DIR" \
+        "$DEST_HOME_RSYNC_DIR"
+
+    btrfs subvolume delete -c "$DEST_HOME_RSYNC_STAGING_DIR"
 
     log "Finished unstaging @home rsync backup"
     log "Finished rsync of @home: $_SNAPSHOT_NAME"
@@ -713,21 +751,8 @@ prune_paired() {
     local -a remote_snaps=()
     local s
 
-    for s in "$local_dir"/*; do
-
-        [[ -d "$s" ]] || continue
-
-        local_snaps+=("${s##*/}")
-
-    done
-
-    for s in "$remote_dir"/*; do
-
-        [[ -d "$s" ]] || continue
-
-        remote_snaps+=("${s##*/}")
-
-    done
+    mapfile -t local_snaps < <(get_sorted_subvol_names "$local_dir")
+    mapfile -t remote_snaps < <(get_sorted_subvol_names "$remote_dir")
 
     local -A remote_map
     local paired=()
@@ -756,8 +781,6 @@ prune_paired() {
 
     fi
 
-    IFS=$'\n' paired=($(printf '%s\n' "${paired[@]}" | sort))
-
     local remove=$((count - max))
     local snap
 
@@ -769,14 +792,14 @@ prune_paired() {
 
         if [[ -d "$remote_dir/$snap" ]]; then
 
-            btrfs subvolume delete "$remote_dir/$snap" \
+            btrfs subvolume delete -c "$remote_dir/$snap" \
                 || error "Failed deleting remote snapshot $snap"
 
         fi
 
-        if [[ -d "$local_dir/$snap" ]]; then
+        if btrfs subvolume show "$local_dir/$snap" &>/dev/null; then
 
-            btrfs subvolume delete "$local_dir/$snap" \
+            btrfs subvolume delete -c "$local_dir/$snap" \
                 || error "Failed deleting local snapshot $snap"
         fi
 
@@ -798,21 +821,8 @@ prune_unpaired() {
     local -a partner_snaps=()
     local s
 
-    for s in "$target_dir"/*; do
-
-        [[ -d "$s" ]] || continue
-
-        target_snaps+=("${s##*/}")
-
-    done
-
-    for s in "$partner_dir"/*; do
-
-        [[ -d "$s" ]] || continue
-
-        partner_snaps+=("${s##*/}")
-
-    done
+    mapfile -t target_snaps < <(get_sorted_subvol_names "$target_dir")
+    mapfile -t partner_snaps < <(get_sorted_subvol_names "$partner_dir")
 
     local -A partner_map
 
@@ -842,8 +852,6 @@ prune_unpaired() {
 
     fi
 
-    IFS=$'\n' unpaired=($(printf '%s\n' "${unpaired[@]}" | sort))
-
     local remove=$((count - max))
     local snap
 
@@ -853,7 +861,7 @@ prune_unpaired() {
 
         log "Deleting unpaired snapshot $snap"
 
-        btrfs subvolume delete "$target_dir/$snap" \
+        btrfs subvolume delete -c "$target_dir/$snap" \
             || error "Failed deleting unpaired snapshot $snap"
 
     done
