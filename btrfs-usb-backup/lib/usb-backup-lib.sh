@@ -534,7 +534,7 @@ unmount_usb_drive() {
 
     if mountpoint -q "$MOUNTPOINT"; then
 
-        # if umount "$MOUNTPOINT"; then
+        if umount "$MOUNTPOINT"; then
 
             log "Backup drive unmounted successfully"
             notify "Unmount successful"
