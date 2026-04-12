@@ -209,14 +209,14 @@ run_pipe() {
     local mode=1
     for arg in "$@"; do
 
-        if [[ "$arg" == ":::" ]]; then
-
-            mode=2
-            continue
-
-        elif [[ "$arg" == ":::log" ]]; then
+        if [[ "$arg" == ":::log" ]]; then
 
             mode=3
+            continue
+
+        elif [[ "$arg" == ":::" ]]; then
+
+            mode=2
             continue
 
         fi
@@ -236,6 +236,15 @@ run_pipe() {
         fi
 
     done
+
+    if (( ${#cmd1[@]} == 0 || ${#cmd2[@]} == 0 )); then
+
+        error "run_pipe: invalid command split"
+        error "cmd1=(${cmd1[*]})"
+        error "cmd2=(${cmd2[*]})"
+        exit 1
+
+    fi
 
     # log "DEBUG dump_log=[$dump_log]"
 
@@ -258,6 +267,14 @@ run_pipe() {
         "${cmd2[@]}" 2>>"$STEP_STDERR"
 
     # fi
+
+    if (( ${#PIPESTATUS[@]} < 2 )); then
+
+        error "Pipeline malformed: expected 2 commands"
+        step_end 1 "invalid pipeline"
+        exit 1
+
+    fi
 
     rc1=${PIPESTATUS[0]}
     rc2=${PIPESTATUS[1]}
