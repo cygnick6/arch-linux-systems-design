@@ -572,21 +572,46 @@ reset_staging_dir() {
 
     local dir="$1"
 
+    log "Resetting staging dir: $dir"
+
     mkdir -p "$dir"
 
-    while IFS= read -r subvol; do
+    if ! findmnt -n -o FSTYPE "$dir" | grep -q btrfs; then
 
-        btrfs subvolume delete "$subvol" || true
+        error "reset_staging_dir: $dir is not on btrfs"
+        return 1
 
-    done < <(
+    fi
+
+    mapfile -t subvols < <(
         btrfs subvolume list -o "$dir" 2>/dev/null \
         | awk '{print $NF}' \
-        | sed "s|^|$dir/|"
+        | sed "s|^|$dir/|" \
+        | sort -r
     )
+
+    for subvol in "${subvols[@]}"; do
+
+        if btrfs subvolume show "$subvol" &>/dev/null; then
+
+            log "Deleting subvolume: $subvol"
+            btrfs subvolume delete "$subvol" \
+                || error "Failed to delete subvolume: $subvol"
+
+        fi
+
+    done
 
     find "$dir" -mindepth 1 -exec rm -rf {} + 2>/dev/null || true
 
-    mkdir -p "$dir"
+    if find "$dir" -mindepth 1 -print -quit | grep -q .; then
+
+        error "reset_staging_dir: directory not empty after cleanup"
+        return 1
+
+    fi
+
+    log "Staging dir reset complete: $dir"
 
 }
 
