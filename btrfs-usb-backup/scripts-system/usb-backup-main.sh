@@ -212,9 +212,9 @@ create_destination "$DEST_HOME_SNAP_DIR"
 reset_staging_dir "$DEST_ROOT_SNAP_STAGING_DIR"
 reset_staging_dir "$DEST_HOME_SNAP_STAGING_DIR"
 
-if btrfs subvolume show "$DEST_HOME_RSYNC_STAGING_DIR"; then
+if btrfs subvolume show "$DEST_HOME_RSYNC_STAGING_DIR" &>/dev/null; then
 
-    btrfs subvolume delete -c "$DEST_HOME_RSYNC_STAGING_DIR" &>/dev/null
+    btrfs subvolume delete -c "$DEST_HOME_RSYNC_STAGING_DIR"
 
     while btrfs subvolume show "$DEST_HOME_RSYNC_STAGING_DIR" &>/dev/null; do
 
