@@ -214,7 +214,7 @@ reset_staging_dir "$DEST_HOME_SNAP_STAGING_DIR"
 
 if btrfs subvolume show "$DEST_HOME_RSYNC_STAGING_DIR"; then
 
-    btrfs subvolume delete -c "$DEST_HOME_RSYNC_STAGING_DIR"
+    btrfs subvolume delete -c "$DEST_HOME_RSYNC_STAGING_DIR" &>/dev/null
 
 fi
 
