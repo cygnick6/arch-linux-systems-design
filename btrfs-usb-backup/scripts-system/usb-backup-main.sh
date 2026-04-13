@@ -299,30 +299,92 @@ if [[ -n "$_ROOT_PARENT" ]]; then
     if [[ "$LOG_TO_FILE" == "true" ]] && \
         [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-        # pipe_start "Transmit staged @ incrementally (logged)" "$MOUNTPOINT"
+        # step_start "Transmit staged @ incrementally (logged)" "$MOUNTPOINT"
+        #
+        # set +e
         #
         # btrfs send --compressed-data \
         #     -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" | \
         # btrfs receive --dump >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
         #
-        # pipe_end "$DEST_ROOT_SNAP_STAGING_DIR"
+        # step_end "$DEST_ROOT_SNAP_STAGING_DIR"
+        #
+        # _PS=("${PIPESTATUS[@]}")
+        #
+        # _RC1=${_PS[0]:-1}
+        # _RC2=${_PS[1]:-1}
+        #
+        # if (( _RC1 == 0 && _RC2 == 0 )); then
+        #
+        #     log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
+        #
+        # else
+        #
+        #     error "STEP FAIL    | $_STEP_DESC | send_rc=$_RC1 recv_rc=$_RC2 | duration=${_STEP_DURATION}s"
+        #     exit 1
+        #
+        # fi
+        #
+        # set -e
 
-        pipe_start "Transmit staged @ fully (debug)" "$MOUNTPOINT"
+        step_start "Transmit staged @ fully (debug)" "$MOUNTPOINT"
 
-        btrfs send --compressed-data "$_ROOT_SNAP" 2>&1 | \
-        btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR" 2>&1 | tee /tmp/btrfs-debug.log
+        set +e
 
-        pipe_end "$DEST_ROOT_SNAP_STAGING_DIR"
+        btrfs send --compressed-data "$_ROOT_SNAP" | \
+        btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR" | tee /tmp/btrfs-debug.log
+
+        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
+
+        _PS=("${PIPESTATUS[@]}")
+
+        _RC1=${_PS[0]:-1}
+        _RC2=${_PS[1]:-1}
+
+        if (( _RC1 == 0 && _RC2 == 0 )); then
+
+            log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
+
+        else
+
+            error "STEP FAIL    | $_STEP_DESC | send_rc=$_RC1 recv_rc=$_RC2 | \
+                duration=${_STEP_DURATION}s"
+            exit 1
+
+        fi
+
+        set -e
 
     else
 
-        pipe_start "Transmit staged @ incrementally" "$MOUNTPOINT"
+        step_start "Transmit staged @ incrementally" "$MOUNTPOINT"
+
+        set +e
 
         btrfs send --compressed-data \
             -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" | \
         btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR"
 
-        pipe_end "$DEST_ROOT_SNAP_STAGING_DIR"
+        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
+
+        _PS=("${PIPESTATUS[@]}")
+
+        _RC1=${_PS[0]:-1}
+        _RC2=${_PS[1]:-1}
+
+        if (( _RC1 == 0 && _RC2 == 0 )); then
+
+            log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
+
+        else
+
+            error "STEP FAIL    | $_STEP_DESC | send_rc=$_RC1 recv_rc=$_RC2 | \
+                duration=${_STEP_DURATION}s"
+            exit 1
+
+        fi
+
+        set -e
 
     fi
 
@@ -333,21 +395,63 @@ else
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-        pipe_start "Transmit staged @ fully (logged)" "$MOUNTPOINT"
+        step_start "Transmit staged @ fully (logged)" "$MOUNTPOINT"
+
+        set +e
 
         btrfs send --compressed-data "$_ROOT_SNAP" | \
         btrfs receive --dump >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
 
-        pipe_end "$DEST_ROOT_SNAP_STAGING_DIR"
+        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
+
+        _PS=("${PIPESTATUS[@]}")
+
+        _RC1=${_PS[0]:-1}
+        _RC2=${_PS[1]:-1}
+
+        if (( _RC1 == 0 && _RC2 == 0 )); then
+
+            log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
+
+        else
+
+            error "STEP FAIL    | $_STEP_DESC | send_rc=$_RC1 recv_rc=$_RC2 | \
+                duration=${_STEP_DURATION}s"
+            exit 1
+
+        fi
+
+        set -e
 
     else
 
-        pipe_start "Transmit staged @ fully" "$MOUNTPOINT"
+        step_start "Transmit staged @ fully" "$MOUNTPOINT"
+
+        set +e
 
         btrfs send --compressed-data "$_ROOT_SNAP" | \
         btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR"
 
-        pipe_end "$DEST_ROOT_SNAP_STAGING_DIR"
+        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
+
+        _PS=("${PIPESTATUS[@]}")
+
+        _RC1=${_PS[0]:-1}
+        _RC2=${_PS[1]:-1}
+
+        if (( _RC1 == 0 && _RC2 == 0 )); then
+
+            log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
+
+        else
+
+            error "STEP FAIL    | $_STEP_DESC | send_rc=$_RC1 recv_rc=$_RC2 | \
+                duration=${_STEP_DURATION}s"
+            exit 1
+
+        fi
+
+        set -e
 
     fi
 
@@ -412,23 +516,65 @@ if [[ -n "$_HOME_PARENT" ]]; then
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-        pipe_start "Transmit staged @home incrementally (logged)" "$MOUNTPOINT"
+        step_start "Transmit staged @home incrementally (logged)" "$MOUNTPOINT"
+
+        set +e
 
         btrfs send --compressed-data \
             -p "$LOCAL_HOME_SNAP_DIR/$_HOME_PARENT" "$_HOME_SNAP" | \
         btrfs receive --dump >> "$HOME_RECEIVE_DUMP_LOG_FILE" 2>&1
 
-        pipe_end "$DEST_HOME_SNAP_STAGING_DIR"
+        step_end "$DEST_HOME_SNAP_STAGING_DIR"
+
+        _PS=("${PIPESTATUS[@]}")
+
+        _RC1=${_PS[0]:-1}
+        _RC2=${_PS[1]:-1}
+
+        if (( _RC1 == 0 && _RC2 == 0 )); then
+
+            log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
+
+        else
+
+            error "STEP FAIL    | $_STEP_DESC | send_rc=$_RC1 recv_rc=$_RC2 | \
+                duration=${_STEP_DURATION}s"
+            exit 1
+
+        fi
+
+        set -e
 
     else
 
-        pipe_start "Transmit staged @home incrementally" "$MOUNTPOINT"
+        step_start "Transmit staged @home incrementally" "$MOUNTPOINT"
+
+        set +e
 
         btrfs send --compressed-data \
             -p "$LOCAL_HOME_SNAP_DIR/$_HOME_PARENT" "$_HOME_SNAP" | \
         btrfs receive "$DEST_HOME_SNAP_STAGING_DIR"
 
-        pipe_end "$DEST_HOME_SNAP_STAGING_DIR"
+        step_end "$DEST_HOME_SNAP_STAGING_DIR"
+
+        _PS=("${PIPESTATUS[@]}")
+
+        _RC1=${_PS[0]:-1}
+        _RC2=${_PS[1]:-1}
+
+        if (( _RC1 == 0 && _RC2 == 0 )); then
+
+            log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
+
+        else
+
+            error "STEP FAIL    | $_STEP_DESC | send_rc=$_RC1 recv_rc=$_RC2 | \
+                duration=${_STEP_DURATION}s"
+            exit 1
+
+        fi
+
+        set -e
 
     fi
 
@@ -439,21 +585,63 @@ else
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-        pipe_start "Transmit staged @home fully (logged)" "$MOUNTPOINT"
+        step_start "Transmit staged @home fully (logged)" "$MOUNTPOINT"
+
+        set +e
 
         btrfs send --compressed-data "$_HOME_SNAP" | \
         btrfs receive --dump >> "$HOME_RECEIVE_DUMP_LOG_FILE" 2>&1
 
-        pipe_end "$DEST_HOME_SNAP_STAGING_DIR"
+        step_end "$DEST_HOME_SNAP_STAGING_DIR"
+
+        _PS=("${PIPESTATUS[@]}")
+
+        _RC1=${_PS[0]:-1}
+        _RC2=${_PS[1]:-1}
+
+        if (( _RC1 == 0 && _RC2 == 0 )); then
+
+            log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
+
+        else
+
+            error "STEP FAIL    | $_STEP_DESC | send_rc=$_RC1 recv_rc=$_RC2 | \
+                duration=${_STEP_DURATION}s"
+            exit 1
+
+        fi
+
+        set -e
 
     else
 
-        pipe_start "Transmit staged @home fully" "$MOUNTPOINT"
+        step_start "Transmit staged @home fully" "$MOUNTPOINT"
+
+        set +e
 
         btrfs send --compressed-data "$_HOME_SNAP" | \
         btrfs receive "$DEST_HOME_SNAP_STAGING_DIR"
 
-        pipe_end "$DEST_HOME_SNAP_STAGING_DIR"
+        step_end "$DEST_HOME_SNAP_STAGING_DIR"
+
+        _PS=("${PIPESTATUS[@]}")
+
+        _RC1=${_PS[0]:-1}
+        _RC2=${_PS[1]:-1}
+
+        if (( _RC1 == 0 && _RC2 == 0 )); then
+
+            log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
+
+        else
+
+            error "STEP FAIL    | $_STEP_DESC | send_rc=$_RC1 recv_rc=$_RC2 | \
+                duration=${_STEP_DURATION}s"
+            exit 1
+
+        fi
+
+        set -e
 
     fi
 
