@@ -404,6 +404,9 @@ else
             > /tmp/btrfs-receive.stdout.log \
             2> /tmp/btrfs-receive.stderr.log
 
+        echo "receive stderr"
+        cat /tmp/btrfs-receive.stderr.log
+
         step_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
         _PS=("${PIPESTATUS[@]}")

@@ -462,20 +462,26 @@ reset_staging_dir() {
 
     if btrfs subvolume show "$dir" &>/dev/null; then
 
+        local full_path
+
         log "Deleting child subvolumes inside staging"
 
         while IFS= read -r subvol; do
 
             full_path="$MOUNTPOINT/$subvol"
 
-            log "Deleting child subvolume: $full_path"
+            log "Deleting subvolume: $full_path"
 
             btrfs subvolume delete "$full_path" || {
-                error "Failed deleting child subvolume: $full_path"
+                error "Failed deleting subvolume: $full_path"
                 exit 1
             }
 
-        done < <(btrfs subvolume list -o "$dir" | awk '{print $NF}')
+        done < <(
+            btrfs subvolume list -o "$dir" \
+            | awk '{print $NF}' \
+            | sort -r
+        )
 
         log "Deleting staging subvolume itself"
 
@@ -489,6 +495,13 @@ reset_staging_dir() {
             sleep 0.2
 
         done
+
+    fi
+
+    if btrfs subvolume list -o "$dir" | grep -q .; then
+
+        error "Subvolume cleanup incomplete in $dir"
+        exit 1
 
     fi
 
