@@ -299,33 +299,33 @@ if [[ -n "$_ROOT_PARENT" ]]; then
     if [[ "$LOG_TO_FILE" == "true" ]] && \
         [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-        # step_start "Transmit staged @ incrementally (logged)" "$MOUNTPOINT"
-        #
-        # set +e
-        #
-        # btrfs send --compressed-data \
-        #     -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" | \
-        # btrfs receive --dump >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
-        #
-        # step_end "$DEST_ROOT_SNAP_STAGING_DIR"
-        #
-        # _PS=("${PIPESTATUS[@]}")
-        #
-        # _RC1=${_PS[0]:-1}
-        # _RC2=${_PS[1]:-1}
-        #
-        # if (( _RC1 == 0 && _RC2 == 0 )); then
-        #
-        #     log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
-        #
-        # else
-        #
-        #     error "STEP FAIL    | $_STEP_DESC | send_rc=$_RC1 recv_rc=$_RC2 | duration=${_STEP_DURATION}s"
-        #     exit 1
-        #
-        # fi
-        #
-        # set -e
+        step_start "Transmit staged @ incrementally (logged)" "$MOUNTPOINT"
+
+        set +e
+
+        btrfs send --compressed-data \
+            -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" | \
+        btrfs receive --dump >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
+
+        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
+
+        _PS=("${PIPESTATUS[@]}")
+
+        _RC1=${_PS[0]:-1}
+        _RC2=${_PS[1]:-1}
+
+        if (( _RC1 == 0 && _RC2 == 0 )); then
+
+            log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
+
+        else
+
+            error "STEP FAIL    | $_STEP_DESC | send_rc=$_RC1 recv_rc=$_RC2 | duration=${_STEP_DURATION}s"
+            exit 1
+
+        fi
+
+        set -e
 
     else
 
