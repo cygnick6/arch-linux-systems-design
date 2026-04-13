@@ -299,59 +299,23 @@ if [[ -n "$_ROOT_PARENT" ]]; then
     if [[ "$LOG_TO_FILE" == "true" ]] && \
         [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-        step_start "Transmit staged @ incrementally (logged)" "$MOUNTPOINT"
-
-        set +e
+        pipe_start "Transmit staged @ incrementally (logged)" "$MOUNTPOINT"
 
         btrfs send --compressed-data \
             -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" | \
         btrfs receive --dump >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
 
-        _RC=$?
-
-        _PS=("${PIPESTATUS[@]}")
-
-        set -e
-
-        _RC1=${_PS[0]:-1}
-        _RC2=${_PS[1]:-1}
-
-        if (( _RC1 != 0 || _RC2 != 0 )); then
-
-            error "Pipeline failed: send_rc=$_RC1 recv_rc=$_RC2"
-            exit 1
-
-        fi
-
-        step_end "$_RC" "send_rc=$_RC1 recv_rc=$_RC2"
+        pipe_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
     else
 
-        step_start "Transmit staged @ incrementally" "$MOUNTPOINT"
-
-        set +e
+        pipe_start "Transmit staged @ incrementally" "$MOUNTPOINT"
 
         btrfs send --compressed-data \
             -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" | \
         btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR"
 
-        _RC=$?
-
-        _PS=("${PIPESTATUS[@]}")
-
-        set -e
-
-        _RC1=${_PS[0]:-1}
-        _RC2=${_PS[1]:-1}
-
-        if (( _RC1 != 0 || _RC2 != 0 )); then
-
-            error "Pipeline failed: send_rc=$_RC1 recv_rc=$_RC2"
-            exit 1
-
-        fi
-
-        step_end "$_RC" "send_rc=$_RC1 recv_rc=$_RC2"
+        pipe_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
     fi
 
@@ -362,65 +326,27 @@ else
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-        step_start "Transmit staged @ fully (logged)" "$MOUNTPOINT"
-
-        set +e
+        pipe_start "Transmit staged @ fully (logged)" "$MOUNTPOINT"
 
         btrfs send --compressed-data "$_ROOT_SNAP" | \
         btrfs receive --dump >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
 
-        _RC=$?
-
-        _PS=("${PIPESTATUS[@]}")
-
-        set -e
-
-        _RC1=${_PS[0]:-1}
-        _RC2=${_PS[1]:-1}
-
-        if (( _RC1 != 0 || _RC2 != 0 )); then
-
-            error "Pipeline failed: send_rc=$_RC1 recv_rc=$_RC2"
-            exit 1
-
-        fi
-
-        step_end "$_RC" "send_rc=$_RC1 recv_rc=$_RC2"
+        pipe_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
     else
 
-        step_start "Transmit staged @ fully" "$MOUNTPOINT"
+        pipe_start "Transmit staged @ fully" "$MOUNTPOINT"
 
-        set +e
+        btrfs send --compressed-data "$_ROOT_SNAP" | \
+        btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR"
 
-            btrfs send --compressed-data "$_ROOT_SNAP" | \
-            btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR"
-
-        _RC=$?
-
-        _PS=("${PIPESTATUS[@]}")
-
-        set -e
-
-        _RC1=${_PS[0]:-1}
-        _RC2=${_PS[1]:-1}
-
-        if (( _RC1 != 0 || _RC2 != 0 )); then
-
-            error "Pipeline failed: send_rc=$_RC1 recv_rc=$_RC2"
-            exit 1
-
-        fi
-
-        step_end "$_RC" "send_rc=$_RC1 recv_rc=$_RC2"
+        pipe_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
     fi
 
     log "Finished staged @ full send: $_SNAPSHOT_NAME"
 
 fi
-
-sync -f "$DEST_ROOT_SNAP_STAGING_DIR"
 
 log "DEBUG: contents of staging dir after receive"
 find "$DEST_ROOT_SNAP_STAGING_DIR" -maxdepth 2 -print
@@ -479,59 +405,23 @@ if [[ -n "$_HOME_PARENT" ]]; then
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-        step_start "Transmit staged @home incrementally (logged)" "$MOUNTPOINT"
-
-        set +e
+        pipe_start "Transmit staged @home incrementally (logged)" "$MOUNTPOINT"
 
         btrfs send --compressed-data \
             -p "$LOCAL_HOME_SNAP_DIR/$_HOME_PARENT" "$_HOME_SNAP" | \
         btrfs receive --dump >> "$HOME_RECEIVE_DUMP_LOG_FILE" 2>&1
 
-        _RC=$?
-
-        _PS=("${PIPESTATUS[@]}")
-
-        set -e
-
-        _RC1=${_PS[0]:-1}
-        _RC2=${_PS[1]:-1}
-
-        if (( _RC1 != 0 || _RC2 != 0 )); then
-
-            error "Pipeline failed: send_rc=$_RC1 recv_rc=$_RC2"
-            exit 1
-
-        fi
-
-        step_end "$_RC" "send_rc=$_RC1 recv_rc=$_RC2"
+        pipe_end "$DEST_HOME_SNAP_STAGING_DIR"
 
     else
 
-        step_start "Transmit staged @home incrementally" "$MOUNTPOINT"
-
-        set +e
+        pipe_start "Transmit staged @home incrementally" "$MOUNTPOINT"
 
         btrfs send --compressed-data \
             -p "$LOCAL_HOME_SNAP_DIR/$_HOME_PARENT" "$_HOME_SNAP" | \
         btrfs receive "$DEST_HOME_SNAP_STAGING_DIR"
 
-        _RC=$?
-
-        _PS=("${PIPESTATUS[@]}")
-
-        set -e
-
-        _RC1=${_PS[0]:-1}
-        _RC2=${_PS[1]:-1}
-
-        if (( _RC1 != 0 || _RC2 != 0 )); then
-
-            error "Pipeline failed: send_rc=$_RC1 recv_rc=$_RC2"
-            exit 1
-
-        fi
-
-        step_end "$_RC" "send_rc=$_RC1 recv_rc=$_RC2"
+        pipe_end "$DEST_HOME_SNAP_STAGING_DIR"
 
     fi
 
@@ -542,65 +432,27 @@ else
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-        step_start "Transmit staged @home fully (logged)" "$MOUNTPOINT"
-
-        set +e
+        pipe_start "Transmit staged @home fully (logged)" "$MOUNTPOINT"
 
         btrfs send --compressed-data "$_HOME_SNAP" | \
         btrfs receive --dump >> "$HOME_RECEIVE_DUMP_LOG_FILE" 2>&1
 
-        _RC=$?
-
-        _PS=("${PIPESTATUS[@]}")
-
-        set -e
-
-        _RC1=${_PS[0]:-1}
-        _RC2=${_PS[1]:-1}
-
-        if (( _RC1 != 0 || _RC2 != 0 )); then
-
-            error "Pipeline failed: send_rc=$_RC1 recv_rc=$_RC2"
-            exit 1
-
-        fi
-
-        step_end "$_RC" "send_rc=$_RC1 recv_rc=$_RC2"
+        pipe_end "$DEST_HOME_SNAP_STAGING_DIR"
 
     else
 
-        step_start "Transmit staged @home fully" "$MOUNTPOINT"
-
-        set +e
+        pipe_start "Transmit staged @home fully" "$MOUNTPOINT"
 
         btrfs send --compressed-data "$_HOME_SNAP" | \
         btrfs receive "$DEST_HOME_SNAP_STAGING_DIR"
 
-        _RC=$?
-
-        _PS=("${PIPESTATUS[@]}")
-
-        set -e
-
-        _RC1=${_PS[0]:-1}
-        _RC2=${_PS[1]:-1}
-
-        if (( _RC1 != 0 || _RC2 != 0 )); then
-
-            error "Pipeline failed: send_rc=$_RC1 recv_rc=$_RC2"
-            exit 1
-
-        fi
-
-        step_end "$_RC" "send_rc=$_RC1 recv_rc=$_RC2"
+        pipe_end "$DEST_HOME_SNAP_STAGING_DIR"
 
     fi
 
     log "Finished staged @home full send: $_SNAPSHOT_NAME"
 
 fi
-
-sync -f "$DEST_HOME_SNAP_STAGING_DIR"
 
 log "Checking received @home"
 
@@ -681,19 +533,11 @@ if [[ "$HOME_RSYNC" == "true" ]]; then
 
     step_start "Backup file-level @home (rsync)" "$MOUNTPOINT"
 
-    set +e
-
     rsync -aHAX --delete-delay --numeric-ids \
         "${_RSYNC_EXCLUDES[@]}" \
         "$_HOME_SNAP/" "$DEST_HOME_RSYNC_STAGING_DIR/"
 
-    _RC=$?
-
-    set -e
-
-    step_end "$_RC" "rsync"
-
-    sync -f "$DEST_HOME_RSYNC_STAGING_DIR"
+    step_end "$DEST_HOME_RSYNC_STAGING_DIR"
 
     log "Checking staged @home rsync backup"
 

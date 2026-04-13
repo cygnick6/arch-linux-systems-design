@@ -134,12 +134,17 @@ step_start() {
 
 step_end() {
 
-    local rc="$1"
-    local extra="$2"
+    dir="${1:-}"
 
-    local end_time duration
+    if [[ -n "$dir" ]]; then
+
+        sync -f "$dir"
+
+    fi
+
+    local end_time
     end_time=$(date +%s)
-    duration=$(( end_time - _STEP_START_TIME ))
+    _STEP_DURATION=$(( end_time - _STEP_START_TIME ))
 
     if [[ -n "$_STEP_DISC_PATH" ]] && mountpoint -q "$_STEP_DISC_PATH"; then
 
@@ -150,17 +155,46 @@ step_end() {
 
     fi
 
-    if (( rc == 0 )); then
+    _STEP_DISC_PATH=""
 
-        log "STEP SUCCESS | $_STEP_DESC | duration=${duration}s"
+}
+
+pipe_start() {
+
+    _STEP_DESC="$1"
+    _STEP_DISC_PATH="${2:-}"
+
+    step_start $_STEP_DESC $_STEP_DISC_PATH
+
+    set +e
+
+}
+
+pipe_end() {
+
+    dir="${1:-}"
+
+    step_end "$dir"
+
+    local ps rc1 rc2
+
+    ps=("${PIPESTATUS[@]}")
+
+    rc1=${ps[0]:-1}
+    rc2=${ps[1]:-1}
+
+    if (( rc1 == 0 && rc2 == 0 )); then
+
+        log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
 
     else
 
-        error "STEP FAIL    | $_STEP_DESC | $extra | duration=${duration}s"
+        error "STEP FAIL    | $_STEP_DESC | send_rc=$rc1 recv_rc=$rc2 | duration=${_STEP_DURATION}s"
+        exit 1
 
     fi
 
-    return $rc
+    set -e
 
 }
 
