@@ -305,8 +305,7 @@ if [[ -n "$_ROOT_PARENT" ]]; then
 
         btrfs send --compressed-data \
             -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" | \
-        btrfs receive --dump "$DEST_ROOT_SNAP_STAGING_DIR" \
-            >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
+        btrfs receive --dump >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
 
         _RC=$?
 
@@ -368,8 +367,7 @@ else
         set +e
 
         btrfs send --compressed-data "$_ROOT_SNAP" | \
-        btrfs receive --dump "$DEST_ROOT_SNAP_STAGING_DIR" \
-            >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
+        btrfs receive --dump >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
 
         _RC=$?
 
@@ -487,8 +485,7 @@ if [[ -n "$_HOME_PARENT" ]]; then
 
         btrfs send --compressed-data \
             -p "$LOCAL_HOME_SNAP_DIR/$_HOME_PARENT" "$_HOME_SNAP" | \
-        btrfs receive --dump "$DEST_HOME_SNAP_STAGING_DIR" \
-            >> "$HOME_RECEIVE_DUMP_LOG_FILE" 2>&1
+        btrfs receive --dump >> "$HOME_RECEIVE_DUMP_LOG_FILE" 2>&1
 
         _RC=$?
 
@@ -550,8 +547,7 @@ else
         set +e
 
         btrfs send --compressed-data "$_HOME_SNAP" | \
-        btrfs receive --dump "$DEST_HOME_SNAP_STAGING_DIR" \
-            >> "$HOME_RECEIVE_DUMP_LOG_FILE" 2>&1
+        btrfs receive --dump >> "$HOME_RECEIVE_DUMP_LOG_FILE" 2>&1
 
         _RC=$?
 
