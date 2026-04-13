@@ -299,11 +299,18 @@ if [[ -n "$_ROOT_PARENT" ]]; then
     if [[ "$LOG_TO_FILE" == "true" ]] && \
         [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-        pipe_start "Transmit staged @ incrementally (logged)" "$MOUNTPOINT"
+        # pipe_start "Transmit staged @ incrementally (logged)" "$MOUNTPOINT"
+        #
+        # btrfs send --compressed-data \
+        #     -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" | \
+        # btrfs receive --dump >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
+        #
+        # pipe_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
-        btrfs send --compressed-data \
-            -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" | \
-        btrfs receive --dump >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
+        pipe_start "Transmit staged @ fully (debug)" "$MOUNTPOINT"
+
+        btrfs send --compressed-data "$_ROOT_SNAP" 2>&1 | \
+        btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR" 2>&1 | tee /tmp/btrfs-debug.log
 
         pipe_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
