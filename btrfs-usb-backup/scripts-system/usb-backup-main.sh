@@ -400,7 +400,9 @@ else
         set +e
 
         btrfs send --compressed-data "$_ROOT_SNAP" | \
-        btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR" | tee /tmp/btrfs-debug.log
+        btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR" \
+            > /tmp/btrfs-receive.stdout.log \
+            2> /tmp/btrfs-receive.stderr.log
 
         step_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
