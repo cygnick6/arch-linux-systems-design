@@ -313,8 +313,6 @@ if [[ -n "$_ROOT_PARENT" ]]; then
             -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" | \
         btrfs receive --dump >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
 
-        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
-
         _PS=("${PIPESTATUS[@]}")
 
         _RC1=${_PS[0]:-1}
@@ -331,6 +329,8 @@ if [[ -n "$_ROOT_PARENT" ]]; then
 
         fi
 
+        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
+
         set -e
 
     else
@@ -342,8 +342,6 @@ if [[ -n "$_ROOT_PARENT" ]]; then
         btrfs send --compressed-data \
             -p "$LOCAL_ROOT_SNAP_DIR/$_ROOT_PARENT" "$_ROOT_SNAP" | \
         btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR"
-
-        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
         _PS=("${PIPESTATUS[@]}")
 
@@ -361,6 +359,8 @@ if [[ -n "$_ROOT_PARENT" ]]; then
             exit 1
 
         fi
+
+        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
         set -e
 
@@ -380,8 +380,6 @@ else
         # btrfs send --compressed-data "$_ROOT_SNAP" | \
         # btrfs receive --dump >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
         #
-        # step_end "$DEST_ROOT_SNAP_STAGING_DIR"
-        #
         # _PS=("${PIPESTATUS[@]}")
         #
         # _RC1=${_PS[0]:-1}
@@ -398,6 +396,8 @@ else
         #     exit 1
         #
         # fi
+
+        # step_end "$DEST_ROOT_SNAP_STAGING_DIR"
         #
         # set -e
 
@@ -415,8 +415,6 @@ else
         echo "receive stderr"
         cat /tmp/btrfs-receive.stderr.log
 
-        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
-
         _PS=("${PIPESTATUS[@]}")
 
         _RC1=${_PS[0]:-1}
@@ -433,6 +431,8 @@ else
             exit 1
 
         fi
+
+        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
         set -e
 
@@ -445,8 +445,6 @@ else
         btrfs send --compressed-data "$_ROOT_SNAP" | \
         btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR"
 
-        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
-
         _PS=("${PIPESTATUS[@]}")
 
         _RC1=${_PS[0]:-1}
@@ -463,6 +461,8 @@ else
             exit 1
 
         fi
+
+        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
         set -e
 
@@ -537,8 +537,6 @@ if [[ -n "$_HOME_PARENT" ]]; then
             -p "$LOCAL_HOME_SNAP_DIR/$_HOME_PARENT" "$_HOME_SNAP" | \
         btrfs receive --dump >> "$HOME_RECEIVE_DUMP_LOG_FILE" 2>&1
 
-        step_end "$DEST_HOME_SNAP_STAGING_DIR"
-
         _PS=("${PIPESTATUS[@]}")
 
         _RC1=${_PS[0]:-1}
@@ -555,6 +553,8 @@ if [[ -n "$_HOME_PARENT" ]]; then
             exit 1
 
         fi
+
+        step_end "$DEST_HOME_SNAP_STAGING_DIR"
 
         set -e
 
@@ -568,8 +568,6 @@ if [[ -n "$_HOME_PARENT" ]]; then
             -p "$LOCAL_HOME_SNAP_DIR/$_HOME_PARENT" "$_HOME_SNAP" | \
         btrfs receive "$DEST_HOME_SNAP_STAGING_DIR"
 
-        step_end "$DEST_HOME_SNAP_STAGING_DIR"
-
         _PS=("${PIPESTATUS[@]}")
 
         _RC1=${_PS[0]:-1}
@@ -586,6 +584,8 @@ if [[ -n "$_HOME_PARENT" ]]; then
             exit 1
 
         fi
+
+        step_end "$DEST_HOME_SNAP_STAGING_DIR"
 
         set -e
 
@@ -605,8 +605,6 @@ else
         btrfs send --compressed-data "$_HOME_SNAP" | \
         btrfs receive --dump >> "$HOME_RECEIVE_DUMP_LOG_FILE" 2>&1
 
-        step_end "$DEST_HOME_SNAP_STAGING_DIR"
-
         _PS=("${PIPESTATUS[@]}")
 
         _RC1=${_PS[0]:-1}
@@ -623,6 +621,8 @@ else
             exit 1
 
         fi
+
+        step_end "$DEST_HOME_SNAP_STAGING_DIR"
 
         set -e
 
@@ -635,8 +635,6 @@ else
         btrfs send --compressed-data "$_HOME_SNAP" | \
         btrfs receive "$DEST_HOME_SNAP_STAGING_DIR"
 
-        step_end "$DEST_HOME_SNAP_STAGING_DIR"
-
         _PS=("${PIPESTATUS[@]}")
 
         _RC1=${_PS[0]:-1}
@@ -653,6 +651,8 @@ else
             exit 1
 
         fi
+
+        step_end "$DEST_HOME_SNAP_STAGING_DIR"
 
         set -e
 
