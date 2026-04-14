@@ -284,9 +284,15 @@ if [[ ! -d "$DEST_ROOT_SNAP_STAGING_DIR" ]]; then
 
 fi
 
-if [[ -e "$DEST_ROOT_SNAP_STAGING_DIR/$_SNAPSHOT_NAME" ]]; then
+log "DEBUG: staging dir info"
+btrfs subvolume show "$DEST_ROOT_SNAP_STAGING_DIR" || true
+ls -la "$DEST_ROOT_SNAP_STAGING_DIR"
+log "DEBUG: existing subvolumes in staging parent"
+btrfs subvolume list "$MOUNTPOINT" | grep "$_SNAPSHOT_NAME" || true
 
-    error "Staging path already exists before receive: $_SNAPSHOT_NAME"
+if btrfs subvolume show "$DEST_ROOT_SNAP_STAGING_DIR/$_SNAPSHOT_NAME" &>/dev/null; then
+
+    error "Subvolume already exists before receive: $_SNAPSHOT_NAME"
     exit 1
 
 fi

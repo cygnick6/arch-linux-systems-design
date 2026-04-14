@@ -485,9 +485,12 @@ reset_staging_dir() {
             exit 1
         }
 
-        while [[ -e "$dir" ]]; do
+        while btrfs subvolume show "$dir" &>/dev/null; do
+
             sleep 0.2
+
         done
+
     fi
 
     btrfs subvolume create "$dir" || {
