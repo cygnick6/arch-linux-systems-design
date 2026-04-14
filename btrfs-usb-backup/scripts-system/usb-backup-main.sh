@@ -410,10 +410,6 @@ else
             > /tmp/btrfs-receive.stdout.log \
             2> /tmp/btrfs-receive.stderr.log
 
-        echo "send stdout"
-        cat /tmp/btrfs-send.stdout.log
-        echo "send stderr"
-        cat /tmp/btrfs-send.stderr.log
         echo "receive stdout"
         cat /tmp/btrfs-receive.stout.log
         echo "receive stderr"
