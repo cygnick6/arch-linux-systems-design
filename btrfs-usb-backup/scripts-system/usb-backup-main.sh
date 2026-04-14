@@ -318,6 +318,8 @@ if [[ -n "$_ROOT_PARENT" ]]; then
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
 
+        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
+
         if (( _RC1 == 0 && _RC2 == 0 )); then
 
             log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
@@ -328,8 +330,6 @@ if [[ -n "$_ROOT_PARENT" ]]; then
             exit 1
 
         fi
-
-        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
         set -e
 
@@ -348,6 +348,8 @@ if [[ -n "$_ROOT_PARENT" ]]; then
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
 
+        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
+
         if (( _RC1 == 0 && _RC2 == 0 )); then
 
             log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
@@ -359,8 +361,6 @@ if [[ -n "$_ROOT_PARENT" ]]; then
             exit 1
 
         fi
-
-        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
         set -e
 
@@ -384,7 +384,9 @@ else
         #
         # _RC1=${_PS[0]:-1}
         # _RC2=${_PS[1]:-1}
-        #
+
+        # step_end "$DEST_ROOT_SNAP_STAGING_DIR"
+
         # if (( _RC1 == 0 && _RC2 == 0 )); then
         #
         #     log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
@@ -396,8 +398,6 @@ else
         #     exit 1
         #
         # fi
-
-        # step_end "$DEST_ROOT_SNAP_STAGING_DIR"
         #
         # set -e
 
@@ -420,6 +420,8 @@ else
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
 
+        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
+
         if (( _RC1 == 0 && _RC2 == 0 )); then
 
             log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
@@ -431,8 +433,6 @@ else
             exit 1
 
         fi
-
-        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
         set -e
 
@@ -450,6 +450,8 @@ else
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
 
+        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
+
         if (( _RC1 == 0 && _RC2 == 0 )); then
 
             log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
@@ -461,8 +463,6 @@ else
             exit 1
 
         fi
-
-        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
         set -e
 
@@ -542,6 +542,8 @@ if [[ -n "$_HOME_PARENT" ]]; then
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
 
+        step_end "$DEST_HOME_SNAP_STAGING_DIR"
+
         if (( _RC1 == 0 && _RC2 == 0 )); then
 
             log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
@@ -553,8 +555,6 @@ if [[ -n "$_HOME_PARENT" ]]; then
             exit 1
 
         fi
-
-        step_end "$DEST_HOME_SNAP_STAGING_DIR"
 
         set -e
 
@@ -573,6 +573,8 @@ if [[ -n "$_HOME_PARENT" ]]; then
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
 
+        step_end "$DEST_HOME_SNAP_STAGING_DIR"
+
         if (( _RC1 == 0 && _RC2 == 0 )); then
 
             log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
@@ -584,8 +586,6 @@ if [[ -n "$_HOME_PARENT" ]]; then
             exit 1
 
         fi
-
-        step_end "$DEST_HOME_SNAP_STAGING_DIR"
 
         set -e
 
@@ -610,6 +610,8 @@ else
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
 
+        step_end "$DEST_HOME_SNAP_STAGING_DIR"
+
         if (( _RC1 == 0 && _RC2 == 0 )); then
 
             log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
@@ -621,8 +623,6 @@ else
             exit 1
 
         fi
-
-        step_end "$DEST_HOME_SNAP_STAGING_DIR"
 
         set -e
 
@@ -640,6 +640,8 @@ else
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
 
+        step_end "$DEST_HOME_SNAP_STAGING_DIR"
+
         if (( _RC1 == 0 && _RC2 == 0 )); then
 
             log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
@@ -651,8 +653,6 @@ else
             exit 1
 
         fi
-
-        step_end "$DEST_HOME_SNAP_STAGING_DIR"
 
         set -e
 
