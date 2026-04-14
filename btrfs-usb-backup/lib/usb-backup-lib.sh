@@ -448,27 +448,23 @@ create_destination() {
 ################################################################################
 
 reset_staging_dir() {
-
     local dir="$1"
 
     log "Resetting staging subvolume: $dir"
 
     if [[ -e "$dir" ]] && ! btrfs subvolume show "$dir" &>/dev/null; then
-
         error "Staging path exists but is not a subvolume: $dir"
         exit 1
-
     fi
 
     if btrfs subvolume show "$dir" &>/dev/null; then
-
-        local full_path
 
         log "Deleting child subvolumes inside staging"
 
         while IFS= read -r subvol; do
 
-            full_path="$MOUNTPOINT/$subvol"
+            local full_path="$subvol"
+            [[ "$subvol" != /* ]] && full_path="$MOUNTPOINT/$subvol"
 
             log "Deleting subvolume: $full_path"
 
@@ -476,7 +472,6 @@ reset_staging_dir() {
                 error "Failed deleting subvolume: $full_path"
                 exit 1
             }
-
         done < <(
             btrfs subvolume list -o "$dir" \
             | awk '{print $NF}' \
@@ -490,25 +485,19 @@ reset_staging_dir() {
             exit 1
         }
 
-        while btrfs subvolume show "$dir" &>/dev/null; do
-
+        while [[ -e "$dir" ]]; do
             sleep 0.2
-
         done
-
     fi
 
-    if btrfs subvolume list -o "$dir" | grep -q .; then
-
-        error "Subvolume cleanup incomplete in $dir"
+    btrfs subvolume create "$dir" || {
+        error "Failed to create staging subvolume: $dir"
         exit 1
+    }
 
-    fi
-
-    btrfs subvolume create "$dir"
+    btrfs filesystem sync "$MOUNTPOINT"
 
     log "Staging reset complete: $dir"
-
 }
 
 ################################################################################
