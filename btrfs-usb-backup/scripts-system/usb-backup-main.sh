@@ -411,7 +411,7 @@ else
             2> /tmp/btrfs-receive.stderr.log
 
         echo "receive stdout"
-        cat /tmp/btrfs-receive.stout.log
+        cat /tmp/btrfs-receive.stdout.log
         echo "receive stderr"
         cat /tmp/btrfs-receive.stderr.log
 
