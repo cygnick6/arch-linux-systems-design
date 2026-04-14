@@ -406,10 +406,18 @@ else
         set +e
 
         btrfs send --compressed-data "$_ROOT_SNAP" | \
+            > /tmp/btrfs-send.stdout.log
+            > /tmp/btrfs-send.stderr.log
         btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR" \
             > /tmp/btrfs-receive.stdout.log \
             2> /tmp/btrfs-receive.stderr.log
 
+        echo "send stdout"
+        cat /tmp/btrfs-send.stdout.log
+        echo "send stderr"
+        cat /tmp/btrfs-send.stderr.log
+        echo "receive stdout"
+        cat /tmp/btrfs-receive.stout.log
         echo "receive stderr"
         cat /tmp/btrfs-receive.stderr.log
 
