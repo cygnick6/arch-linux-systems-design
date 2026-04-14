@@ -230,12 +230,15 @@ validate_backup_uuid_conf () {
 
 prepare_local_directories() {
 
-    mkdir -p "$LOCAL_ROOT_SNAP_DIR" "$LOCAL_HOME_SNAP_DIR" "$LOCK_DIR" \
+    mkdir -p "$ROOT_SUBVOL_RUN_MOUNTPOINT" "$HOME_SUBVOL_RUN_MOUNTPOINT" \
+             "$LOCK_DIR" "$LOCAL_ROOT_SNAP_DIR" "$LOCAL_HOME_SNAP_DIR" \
              "$STATE_DIR" "$STATE_COUNTER_DIR" "$STATE_FLAG_DIR" \
              "$STATE_TIMESTAMP_DIR" "$LOG_DIR"
 
-    chmod 700 "$STATE_DIR"
+    chmod 700 "$ROOT_SUBVOL_RUN_MOUNTPOINT"
+    chmod 700 "$HOME_SUBVOL_RUN_MOUNTPOINT"
     chmod 700 "$LOCK_DIR"
+    chmod 700 "$STATE_DIR"
 
 }
 
@@ -485,11 +488,24 @@ reset_staging_dir() {
             exit 1
         }
 
-        while btrfs subvolume show "$dir" &>/dev/null; do
+        for i in {1..50}; do
+
+            if ! btrfs subvolume show "$dir" &>/dev/null; then
+
+                break
+
+            fi
 
             sleep 0.2
 
         done
+
+        if btrfs subvolume show "$dir" &>/dev/null; then
+
+            error "Staging subvolume deletion did not complete"
+            exit 1
+
+        fi
 
     fi
 
@@ -501,6 +517,46 @@ reset_staging_dir() {
     btrfs filesystem sync "$MOUNTPOINT"
 
     log "Staging reset complete: $dir"
+}
+
+################################################################################
+# SUBVOL MOUNT FUNCTION
+################################################################################
+
+mount_subvol() {
+
+    local subvol="$1"
+    local source_device="$2"
+    local mountpoint="$3"
+
+    if mountpoint -q "$mountpoint"; then
+
+        error "Mountpoint already in use: $mountpoint"
+        exit 1
+
+    fi
+
+    if ! mount -o subvol="$subvol" "$source_device" "$mountpoint"; then
+
+        error "Failed to mount $subvol subvolume"
+        exit 1
+
+    fi
+
+    if ! findmnt -n -o SOURCE "$mountpoint" | grep -qx "$source_device"; then
+
+        error "Mounted $subvol is not from expected device $source_device"
+        exit 1
+
+    fi
+
+    if ! findmnt -n -o OPTIONS "$mountpoint" | grep -q "subvol=$subvol"; then
+
+        error "Mounted subvolume is not $subvol"
+        exit 1
+
+    fi
+
 }
 
 ################################################################################
@@ -532,12 +588,23 @@ get_sorted_subvol_names() {
 
 runtime_mount_check() {
 
-if ! findmnt -n -o FSTYPE "$MOUNTPOINT" | grep -q btrfs; then
+    local uuid
+    uuid=$(findmnt -n -o UUID "$MOUNTPOINT")
 
-    error "Refusing to operate: $MOUNTPOINT is not a mounted Btrfs filesystem"
-    exit 1
+    if [[ "$uuid" != "$BACKUP_UUID" ]]; then
 
-fi
+        error "Mounted filesystem UUID mismatch during runtime"
+        exit 1
+
+    fi
+
+    if ! findmnt -n -o FSTYPE "$MOUNTPOINT" | grep -q btrfs; then
+
+        error "Refusing to operate: $MOUNTPOINT \
+            is not a mounted Btrfs filesystem"
+        exit 1
+
+    fi
 
 }
 

@@ -132,6 +132,8 @@ cleanup_handler() {
     log "Starting cleanup"
 
     unmount_usb_drive
+    umount "$ROOT_SUBVOL_RUN_MOUNTPOINT" 2>/dev/null || true
+    umount "$HOME_SUBVOL_RUN_MOUNTPOINT" 2>/dev/null || true
 
     log "Finished cleanup"
     log_declare "usb-backup-main.sh exited with errors"
@@ -228,7 +230,11 @@ fi
 # CREATE NEW LOCAL SNAPSHOTS
 ################################################################################
 
-# Do not edit - backup system relies on inherent sorting and atomicity
+mount_subvol "@" "$BTRFS_SOURCE_DEVICE" "$ROOT_SUBVOL_RUN_MOUNTPOINT"
+mount_subvol "@home" "$BTRFS_SOURCE_DEVICE" "$HOME_SUBVOL_RUN_MOUNTPOINT"
+
+# Do not edit needlessly
+# Backup system relies on inherent sorting and atomicity
 _SNAPSHOT_NAME=$(date +"%Y-%m-%d_%H-%M-%S")_$$
 
 _ROOT_SNAP="$LOCAL_ROOT_SNAP_DIR/$_SNAPSHOT_NAME"
@@ -236,8 +242,13 @@ _HOME_SNAP="$LOCAL_HOME_SNAP_DIR/$_SNAPSHOT_NAME"
 
 log "Creating new local snapshots: $_SNAPSHOT_NAME"
 
-btrfs subvolume snapshot -r / "$_ROOT_SNAP"
-btrfs subvolume snapshot -r /home "$_HOME_SNAP"
+btrfs subvolume snapshot -r "$ROOT_SUBVOL_RUN_MOUNTPOINT" "$_ROOT_SNAP"
+btrfs subvolume snapshot -r "$HOME_SUBVOL_RUN_MOUNTPOINT" "$_HOME_SNAP"
+
+btrfs filesystem sync "$BTRFS_SOURCE_DEVICE"
+
+umount "$ROOT_SUBVOL_RUN_MOUNTPOINT"
+umount "$HOME_SUBVOL_RUN_MOUNTPOINT"
 
 log "Created new local snapshots: $_SNAPSHOT_NAME"
 
@@ -766,7 +777,7 @@ if [[ "$HOME_RSYNC" == "true" ]]; then
 
         btrfs subvolume delete -c "$DEST_HOME_RSYNC_DIR"
 
-        while btrfs subvolume show "$dir" &>/dev/null; do
+        while btrfs subvolume show "$DEST_HOME_RSYNC_DIR" &>/dev/null; do
 
             sleep 0.2
 
