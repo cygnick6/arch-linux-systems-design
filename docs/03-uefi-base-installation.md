@@ -64,11 +64,10 @@ Create the partitions, using type codes to correctly identify the BIOS boot part
 - 2nd partition: remainder of disk, type code `8300` (Linux filesystem)
 
 
-## 4. Format & Mount the EFI System Partition
+## 4. Format the EFI System Partition
 
 ```bash
 mkfs.fat -F32 /dev/sdX1
-mount --mkdir /dev/sdX1 /mnt/boot
 ```
 
 
@@ -127,9 +126,11 @@ An overview of the mount options used:
 - `compress=no` - the transient contents of the `@var/` subvolumes are not worth compressing
 - `subvol=` - subvolume to mount from `/dev/mapper/cryptroot`
 
-Unmount the file system and mount the subvolumes using mount options:
+Unmount the file system and mount the `EFI System Parition` along with the subvolumes using mount options:
 ```bash
 umount /mnt
+
+mount --mkdir /dev/sdX1 /mnt/boot
 
 mount -o noatime,compress=zstd,subvol=@ /dev/mapper/cryptroot /mnt
 mount --mkdir -o noatime,compress=zstd,subvol=@home /dev/mapper/cryptroot /mnt/home

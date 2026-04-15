@@ -68,11 +68,10 @@ Create the partitions, using type codes to correctly identify the BIOS boot part
 - 3rd partition: remainder of disk, type code `8300` (Linux filesystem)
 
 
-## 4. Format & Mount the BIOS Boot Partition
+## 4. Format the BIOS Boot Partition
 
 ```bash
 mkfs.ext4 /dev/sdX2
-mount --mkdir /dev/sdX2 /mnt/boot
 ```
 
 
@@ -131,9 +130,11 @@ An overview of the mount options used:
 - `compress=no` - the transient contents of the `@var/` subvolumes are not worth compressing
 - `subvol=` - subvolume to mount from `/dev/mapper/cryptroot`
 
-Unmount the file system and mount the subvolumes using mount options:
+Unmount the file system and mount the `BIOS Boot Partition` along with the subvolumes using mount options:
 ```bash
 umount /mnt
+
+mount --mkdir /dev/sda2 /mnt/boot
 
 mount -o noatime,compress=zstd,subvol=@ /dev/mapper/cryptroot /mnt
 mount --mkdir -o noatime,compress=zstd,subvol=@home /dev/mapper/cryptroot /mnt/home
@@ -231,6 +232,11 @@ blkid -s UUID -o value /dev/sdX3 | sed 's/^/# /' >> /etc/default/grub
 Edit `/etc/default/grub` and add the paramaters (use copy and paste if the UUID was appended):
 ```ini
 GRUB_CMDLINE_LINUX="cryptdevice=UUID=<recorded-UUID>:cryptroot root=/dev/mapper/cryptroot rootflags=subvol=@"
+```
+
+Temporarily mount the `BIOS boot partition`:
+```bash
+mount /dev/sda2 /boot
 ```
 
 Install `GRUB` (BIOS target):
