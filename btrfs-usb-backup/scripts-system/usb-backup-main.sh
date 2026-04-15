@@ -161,7 +161,7 @@ date --iso-8601=seconds > "$LAST_BACKUP_PROMPT_TIMESTAMP_FILE"
 ################################################################################
 
 validate_user_name_conf
-validate_backup_uuid_conf
+validate_high_priority_conf
 
 ################################################################################
 # CHECK FLAG backup-due
@@ -205,6 +205,25 @@ mount_usb_drive
 ################################################################################
 # PREPARE REMOTE DIRECTORIES
 ################################################################################
+
+if ! mountpoint -q "$MOUNTPOINT"; then
+
+    error "Nothing mounted to target mountpoint"
+    exit 1
+
+fi
+
+case "$MOUNTPOINT" in
+    "/"|"/home"|"/root"|"/var"|"/usr"|"/etc")
+
+        error "Unsafe mountpoint"
+        exit 1
+
+        ;;
+
+esac
+
+[[ "$MOUNTPOINT" == "" ]] && exit 1
 
 mkdir -p "$DEST_DIR"
 
@@ -275,6 +294,20 @@ find_parent_snapshot() {
         fi
 
     done
+
+    if [[ ! -e "$local_dir/$parent" ]]; then
+
+        error "Targeted parent snapshot does not exist locally"
+        exit 1
+
+    fi
+
+    if [[ ! -e "$remote_dir/$parent" ]]; then
+
+        error "Targeted parent snapshot does not exist remotely"
+        exit 1
+
+    fi
 
     echo "$parent"
 
@@ -384,54 +417,19 @@ else
     if [[ "$LOG_TO_FILE" == "true" ]] && \
        [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
 
-        # step_start "Transmit staged @ fully (logged)" "$MOUNTPOINT"
-        #
-        # set +e
-        #
-        # btrfs send --compressed-data "$_ROOT_SNAP" | \
-        # btrfs receive --dump >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
-        #
-        # _PS=("${PIPESTATUS[@]}")
-        #
-        # _RC1=${_PS[0]:-1}
-        # _RC2=${_PS[1]:-1}
-
-        # step_end "$DEST_ROOT_SNAP_STAGING_DIR"
-
-        # if (( _RC1 == 0 && _RC2 == 0 )); then
-        #
-        #     log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
-        #
-        # else
-        #
-        #     error "STEP FAIL    | $_STEP_DESC | send_rc=$_RC1 recv_rc=$_RC2 | \
-        #         duration=${_STEP_DURATION}s"
-        #     exit 1
-        #
-        # fi
-        #
-        # set -e
-
-        step_start "Transmit staged @ fully (debug)" "$MOUNTPOINT"
+        step_start "Transmit staged @ fully (logged)" "$MOUNTPOINT"
 
         set +e
 
         btrfs send --compressed-data "$_ROOT_SNAP" | \
-        btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR" \
-            >> /tmp/btrfs-receive.stdout.log \
-            2>> /tmp/btrfs-receive.stderr.log
-
-        echo "receive stdout"
-        cat /tmp/btrfs-receive.stdout.log
-        echo "receive stderr"
-        cat /tmp/btrfs-receive.stderr.log
+        btrfs receive --dump >> "$ROOT_RECEIVE_DUMP_LOG_FILE" 2>&1
 
         _PS=("${PIPESTATUS[@]}")
 
         _RC1=${_PS[0]:-1}
         _RC2=${_PS[1]:-1}
 
-        step_end "$DEST_ROOT_SNAP_STAGING_DIR"
+         step_end "$DEST_ROOT_SNAP_STAGING_DIR"
 
         if (( _RC1 == 0 && _RC2 == 0 )); then
 
@@ -446,6 +444,41 @@ else
         fi
 
         set -e
+
+        # step_start "Transmit staged @ fully (debug)" "$MOUNTPOINT"
+        #
+        # set +e
+        #
+        # btrfs send --compressed-data "$_ROOT_SNAP" | \
+        # btrfs receive "$DEST_ROOT_SNAP_STAGING_DIR" \
+        #     >> /tmp/btrfs-receive.stdout.log \
+        #     2>> /tmp/btrfs-receive.stderr.log
+        #
+        # echo "receive stdout"
+        # cat /tmp/btrfs-receive.stdout.log
+        # echo "receive stderr"
+        # cat /tmp/btrfs-receive.stderr.log
+        #
+        # _PS=("${PIPESTATUS[@]}")
+        #
+        # _RC1=${_PS[0]:-1}
+        # _RC2=${_PS[1]:-1}
+        #
+        # step_end "$DEST_ROOT_SNAP_STAGING_DIR"
+        #
+        # if (( _RC1 == 0 && _RC2 == 0 )); then
+        #
+        #     log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
+        #
+        # else
+        #
+        #     error "STEP FAIL    | $_STEP_DESC | send_rc=$_RC1 recv_rc=$_RC2 | \
+        #         duration=${_STEP_DURATION}s"
+        #     exit 1
+        #
+        # fi
+        #
+        # set -e
 
     else
 
@@ -710,7 +743,41 @@ log "@home transmission completed: $_SNAPSHOT_NAME"
 
 if [[ "$HOME_RSYNC" == "true" ]]; then
 
+    if [[ "$_HOME_SNAP" == "" ]]; then
+
+        error "_HOME_SNAP unnassigned"
+        exit 1
+
+    fi
+
+    if [[ ! -d "$_HOME_SNAP" ]]; then
+
+        error "Assigned _HOME_SNAP is not a directory"
+        exit 1
+
+    fi
+
     log "Starting rsync of @home ($_SNAPSHOT_NAME)"
+
+    if [[ -z "$DEST_HOME_RSYNC_DIR" ]] \
+        || [[ "$DEST_HOME_RSYNC_DIR" == "/" ]]; then
+
+        error "Unsafe home rsync destination"
+        exit 1
+
+    fi
+
+    case "$DEST_HOME_RSYNC_DIR" in
+        /home/*|/root/*|/etc/*|/usr/*|/var/*|"")
+            ;;
+        *)
+
+            error "Unsafe rsync target"
+            exit 1
+
+            ;;
+
+    esac
 
     runtime_mount_check
 
@@ -752,7 +819,7 @@ if [[ "$HOME_RSYNC" == "true" ]]; then
 
     step_start "Backup file-level @home (rsync)" "$MOUNTPOINT"
 
-    rsync -aHAX --delete-delay --numeric-ids \
+    rsync -aHAX --delete-delay --numeric-ids --one-file-system \
         "${_RSYNC_EXCLUDES[@]}" \
         "$_HOME_SNAP/" "$DEST_HOME_RSYNC_STAGING_DIR/"
 
@@ -821,6 +888,17 @@ prune_paired() {
     local -a local_snaps=()
     local -a remote_snaps=()
     local s
+
+    case "$remote_dir" in
+        "$MOUNTPOINT"/*) ;;
+        *)
+
+            error "Refusing prune outside backup mount"
+            exit 1
+
+            ;;
+
+    esac
 
     mapfile -t local_snaps < <(get_sorted_subvol_names "$local_dir")
     mapfile -t remote_snaps < <(get_sorted_subvol_names "$remote_dir")
@@ -891,6 +969,17 @@ prune_unpaired() {
     local -a target_snaps=()
     local -a partner_snaps=()
     local s
+
+    case "$target_dir" in
+        "$MOUNTPOINT"/*) ;;
+        *)
+
+            error "Refusing prune outside backup mount"
+            exit 1
+
+            ;;
+
+    esac
 
     mapfile -t target_snaps < <(get_sorted_subvol_names "$target_dir")
     mapfile -t partner_snaps < <(get_sorted_subvol_names "$partner_dir")

@@ -26,6 +26,7 @@
 # INITIALIZE
 ################################################################################
 
+set -euo pipefail
 set -o errtrace
 IFS=$'\n\t'
 
@@ -107,59 +108,6 @@ error_handler() {
 }
 
 ################################################################################
-# COMMAND WRAPPERS
-################################################################################
-
-step_start() {
-
-    _STEP_DESC="$1"
-    _STEP_DISC_PATH="${2:-}"
-
-    log "STEP START   | $_STEP_DESC"
-
-    _STEP_START_TIME=$(date +%s)
-
-    if [[ -n "$_STEP_DISC_PATH" ]] && mountpoint -q "$_STEP_DISC_PATH"; then
-
-        _STEP_DISC_BEFORE=$(df -h --output=used "$_STEP_DISC_PATH" | tail -1 | xargs)
-        log "STEP DISK    | before=$_STEP_DISC_BEFORE path=$_STEP_DISC_PATH"
-
-    else
-
-        _STEP_DISC_BEFORE=""
-
-    fi
-
-}
-
-step_end() {
-
-    dir="${1:-}"
-
-    if [[ -n "$dir" ]]; then
-
-        sync -f "$dir"
-
-    fi
-
-    local end_time
-    end_time=$(date +%s)
-    _STEP_DURATION=$(( end_time - _STEP_START_TIME ))
-
-    if [[ -n "$_STEP_DISC_PATH" ]] && mountpoint -q "$_STEP_DISC_PATH"; then
-
-        local disk_after
-        disk_after=$(df -h --output=used "$_STEP_DISC_PATH" | tail -1 | xargs)
-
-        log "STEP DISK    | after=$disk_after path=$_STEP_DISC_PATH"
-
-    fi
-
-    _STEP_DISC_PATH=""
-
-}
-
-################################################################################
 # NOTIFICATION FUNCTION
 ################################################################################
 
@@ -206,10 +154,10 @@ validate_user_name_conf () {
 }
 
 ################################################################################
-# VALIDATE BACKUP_UUID CONF
+# VALIDATE HIGH PRIORITY CONF
 ################################################################################
 
-validate_backup_uuid_conf () {
+validate_high_priority_conf () {
 
     if [[ -z "$BACKUP_UUID" ]]; then
 
@@ -221,6 +169,16 @@ validate_backup_uuid_conf () {
         exit 1
 
     fi
+
+    case "$MOUNTPOINT" in
+        "/"|"/home"|"/var"|"/usr"|"/etc")
+
+            error "Unsafe MOUNTPOINT configured"
+            exit 1
+
+            ;;
+
+    esac
 
 }
 
@@ -469,6 +427,13 @@ reset_staging_dir() {
             local full_path="$subvol"
             [[ "$subvol" != /* ]] && full_path="$MOUNTPOINT/$subvol"
 
+            if [[ "$full_path" != "$MOUNTPOINT"* ]]; then
+
+                error "Refusing unsafe subvolume delete: $full_path"
+                exit 1
+
+            fi
+
             log "Deleting subvolume: $full_path"
 
             btrfs subvolume delete "$full_path" || {
@@ -480,6 +445,17 @@ reset_staging_dir() {
             | awk '{print $NF}' \
             | sort -r
         )
+
+        case "$dir" in
+            "$MOUNTPOINT"/*) ;;
+            *)
+
+                error "Refusing to operate outside mountpoint: $dir"
+                exit 1
+
+                ;;
+
+        esac
 
         log "Deleting staging subvolume itself"
 
@@ -535,6 +511,17 @@ mount_subvol() {
         exit 1
 
     fi
+
+    case "$subvol" in
+        "@"|"@home") ;;
+        *)
+
+            error "Invalid subvol: $subvol"
+            exit 1
+
+            ;;
+
+    esac
 
     if ! mount -o subvol="$subvol" "$source_device" "$mountpoint"; then
 
@@ -609,6 +596,59 @@ runtime_mount_check() {
 }
 
 ################################################################################
+# COMMAND WRAPPERS
+################################################################################
+
+step_start() {
+
+    _STEP_DESC="$1"
+    _STEP_DISC_PATH="${2:-}"
+
+    log "STEP START   | $_STEP_DESC"
+
+    _STEP_START_TIME=$(date +%s)
+
+    if [[ -n "$_STEP_DISC_PATH" ]] && mountpoint -q "$_STEP_DISC_PATH"; then
+
+        _STEP_DISC_BEFORE=$(df -h --output=used "$_STEP_DISC_PATH" | tail -1 | xargs)
+        log "STEP DISK    | before=$_STEP_DISC_BEFORE path=$_STEP_DISC_PATH"
+
+    else
+
+        _STEP_DISC_BEFORE=""
+
+    fi
+
+}
+
+step_end() {
+
+    dir="${1:-}"
+
+    if [[ -n "$dir" ]]; then
+
+        sync -f "$dir"
+
+    fi
+
+    local end_time
+    end_time=$(date +%s)
+    _STEP_DURATION=$(( end_time - _STEP_START_TIME ))
+
+    if [[ -n "$_STEP_DISC_PATH" ]] && mountpoint -q "$_STEP_DISC_PATH"; then
+
+        local disk_after
+        disk_after=$(df -h --output=used "$_STEP_DISC_PATH" | tail -1 | xargs)
+
+        log "STEP DISK    | after=$disk_after path=$_STEP_DISC_PATH"
+
+    fi
+
+    _STEP_DISC_PATH=""
+
+}
+
+################################################################################
 # UNMOUNT FUNCTION
 ################################################################################
 
@@ -665,7 +705,7 @@ unmount_usb_drive() {
 
                     if [[ "$manual" == "true" ]]; then
 
-                        printf "Backup drive umnounted lazily - \
+                        printf "Backup drive unmounted lazily - \
                                 two failed normal unmount attempts prior\n"
 
                     fi
