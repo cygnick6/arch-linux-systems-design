@@ -48,7 +48,28 @@ Install the packages:
 pacman -S snapper snap-pac grub-btrfs
 ```
 
-### 3.2 Configure Snapper & Tools
+### 3.2 Target Snapper Configuration
+
+`Snapper` configurations will target high short-term resolution, low long-term resolution internal snapshots. The [External Recovery Model](07-external-recovery-model.md) will account for configurable long-term history.
+
+`Snapper` `@`:
+- Snapshot frequency:
+    - hourly (short-term inspection window)
+    - automatic pre/post `pacman` snapshots (via `snap-pac`)
+- Retention:
+    - up to ~12 hourly snapshots depending on system activity
+    - ~1 week usable rollback window
+    - hard cap: 50 snapshots
+    
+`Snapper` `@home`:
+- Snapshot frequency:
+    - higher resolution than root
+- Retention:
+    - ~24 hours high resolution
+    - ~1 week total retention
+    - hard cap: 50 snapshots
+
+### 3.3 Configure Snapper
 
 `Snapper` needs configs for both `@` and `@home`.
 
@@ -56,7 +77,7 @@ The following subvolumes were already created in the [BIOS](02-bios-base-install
 - `@root_snapshots` - mounted to `/.snapshots`
 - `@home_snapshots` - mounted to `/home/.snapshots`
 
-These subvolumes will be ultimately supplied to `Snapper`. Before then, they must be umounted so that `Snapper` can happily create them.
+These subvolumes will be ultimately supplied to `Snapper`. Before then, they must be umounted so that `Snapper` can create them.
 
 Unmount and remove the existing, target subvolumes where `Snapper` snapshots will ultimately live:
 ```bash
@@ -85,7 +106,45 @@ mkdir /.snapshots /home/.snapshots
 mount -a
 ```
 
-The generated, default configurations can each be found at `/etc/snapper/configs/`. Consider altering the timeline and quantity values to fit your use case (e.g. `@home` snapshots may be generated less often, and fewer snapshots kept on hand).
+The generated, default configurations can each be found at `/etc/snapper/configs/`.
+
+Change the values in `/etc/snapper/configs/root` to:
+```ini
+NUMBER_CLEANUP="yes"
+
+NUMBER_LIMIT="50"
+
+TIMELINE_CREATE="yes"
+
+TIMELINE_CLEANUP="yes"
+
+TIMELINE_MIN_AGE="7200"
+TIMELINE_LIMIT_HOURLY="12"
+TIMELINE_LIMIT_DAILY="7"
+TIMELINE_LIMIT_WEEKLY="2"
+TIMELINE_LIMIT_MONTHLY="0"
+TIMELINE_LIMIT_QUARTERLY="0"
+TIMELINE_LIMIT_YEARLY="0"
+```
+
+Change the values in `/etc/snapper/configs/home` to:
+```ini
+NUMBER_CLEANUP="yes"
+
+NUMBER_LIMIT="50"
+
+TIMELINE_CREATE="yes"
+
+TIMELINE_CLEANUP="yes"
+
+TIMELINE_MIN_AGE="1800"
+TIMELINE_LIMIT_HOURLY="24"
+TIMELINE_LIMIT_DAILY="7"
+TIMELINE_LIMIT_WEEKLY="2"
+TIMELINE_LIMIT_MONTHLY="0"
+TIMELINE_LIMIT_QUARTERLY="0"
+TIMELINE_LIMIT_YEARLY="0"
+```
 
 Enable the timers for timeline-based `Snapper` operations:
 ```bash
@@ -93,9 +152,11 @@ systemctl enable --now snapper-timeline.timer
 systemctl enable --now snapper-cleanup.timer
 ```
 
+### 3.4 Configure grub-btrfs
+
 Symlink the root milestone snapshots into `/.snapshots` to give `grub-btrfs` access to them:
 ```bash
-ln -s /.root-milestone-snapshots /.snapshots/milestones
+ln -s /.milestone-snapshots /.snapshots/milestones
 ```
 
 - This symlink does not give `Snapper` access to the root milestone snapshots
@@ -107,7 +168,7 @@ systemctl enable --now grub-btrfsd.service
 grub-mkconfig -o /boot/grub/grub.cfg
 ```
 
-### 3.3 Manual Creation and Inspection
+### 3.5 Manual Creation and Inspection
 
 To list the existing `Snapper` snapshots:
 ```bash
@@ -127,7 +188,7 @@ snapper -c root create --description "custom description"
 snapper -c home create --description "custom description"
 ```
 
-### 3.4 Manual Online Rollback
+### 3.6 Manual Online Rollback
 
 Online rollbacks may be performed for `@home` or any subvolume non-essential to the system, but:
 > Never perform an online *root* rollback
@@ -145,9 +206,9 @@ snapper -c home rollback <snapshot-number>
 reboot
 ```
 
-- Reboot after any substantial, system-aware rollback (`@home` may contain configurations for window managers, etc.)
+- Reboot after any substantial, system-aware rollback (`@home` may contain configurations)
 
-### 3.5 Internal Snapper Snapshot Layer Recap
+### 3.7 Internal Snapper Snapshot Layer Recap
 
 The only two subvolumes whose snapshots are managed by Snapper are `@` and `@home`.
 
