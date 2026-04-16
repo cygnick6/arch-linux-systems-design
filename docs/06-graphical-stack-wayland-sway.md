@@ -94,6 +94,8 @@ Provides:
 Requirement:
 - A notification daemon compatible with Wayland protocols
 
+> `libnotify` is used for notification support in the [External Recovery Model](07-external-recovery-model.md)
+
 
 ## 1.7 Idle / Lock Management
 

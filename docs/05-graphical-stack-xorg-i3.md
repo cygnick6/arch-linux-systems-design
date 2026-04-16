@@ -119,6 +119,8 @@ Provides:
 Requirement:
 - A notification daemon implementing the freedesktop notification spec
 
+> `libnotify` is used for notification support in the [External Recovery Model](07-external-recovery-model.md)
+
 
 ### 1.9 Power and Hardware Control
 
