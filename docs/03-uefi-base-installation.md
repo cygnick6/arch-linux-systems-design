@@ -545,7 +545,7 @@ By creating a milestone snapshot of `@` now, the base of this installation may b
 Create a read-only `@` snapshot named `03-base-install`:
 ```bash
 btrfs subvolume snapshot -r / /.milestone-snapshots/03-base-install
-btrfs subvolume snapshot -r /home /.milestone-snapshots/03-base-install
+btrfs subvolume snapshot -r /home /home/.milestone-snapshots/03-base-install
 ```
 
 ### 13.2 Root Milestone Rollback

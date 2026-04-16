@@ -375,7 +375,7 @@ By creating a milestone snapshot of `@` now, an extra degree of freedom is affor
 Create a read-only `@` snapshot named `04-internal-recovery`:
 ```bash
 btrfs subvolume snapshot -r / /.milestone-snapshots/04-internal-recovery
-btrfs subvolume snapshot -r /home /.milestone-snapshots/04-internal-recovery
+btrfs subvolume snapshot -r /home /home/.milestone-snapshots/04-internal-recovery
 ```
 
 ### 5.2 Root Milestone Rollback
