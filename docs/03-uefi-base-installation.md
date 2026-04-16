@@ -165,14 +165,12 @@ Install essential packages:
 pacstrap -K /mnt base linux linux-firmware cryptsetup btrfs-progs grub
 ```
 
-- Note that the external USB backup system included in this architecture makes use of `sudo` for notification support (it’s one line in `usb-backup-lib.sh` - edit it yourself if you like)
-
 Consider also installing:
 - CPU microcode (`intel-ucode` or `amd-ucode`)
-- `networkmanager`
+- a network manager
 - a firewall
 - `reflector`, a tool for Arch mirror server selection
-- `sudo`, a privilege escalation utility
+- `sudo`, a privilege escalation utility (used by the `btrfs-usb-backup` system in the [External Recovery Model](07-external-recovery-model.md))
 - `xdg-user-dirs` for user XDG home directory management
 - `tlp` for *laptop* power management tools
 - `btrfsmaintenance` for a structured system maintenance toolkit
