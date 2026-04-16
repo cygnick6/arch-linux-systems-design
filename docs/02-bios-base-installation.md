@@ -234,11 +234,6 @@ Edit `/etc/default/grub` and add the paramaters (use copy and paste if the UUID 
 GRUB_CMDLINE_LINUX="cryptdevice=UUID=<recorded-UUID>:cryptroot root=/dev/mapper/cryptroot rootflags=subvol=@"
 ```
 
-Temporarily mount the `BIOS boot partition`:
-```bash
-mount /dev/sda2 /boot
-```
-
 Install `GRUB` (BIOS target):
 ```bash
 grub-install --target=i386-pc /dev/sdX
