@@ -117,6 +117,8 @@ btrfs subvolume create /mnt/@var_lib
 btrfs subvolume create /mnt/@var_log
 btrfs subvolume create /mnt/@var_spool
 btrfs subvolume create /mnt/@var_tmp
+
+btrfs subvolume create /mnt/@home_cache
 ```
 
 Disable Copy-on-Write (CoW) where log files will be stored:
@@ -152,8 +154,12 @@ mount --mkdir -o noatime,compress=no,subvol=@var_log /dev/mapper/cryptroot /mnt/
 mount --mkdir -o noatime,compress=no,subvol=@var_spool /dev/mapper/cryptroot /mnt/var/spool
 mount --mkdir -o noatime,compress=no,subvol=@var_tmp /dev/mapper/cryptroot /mnt/var/tmp
 
+mount --mkdir -o noatime,compress=no,subvol=@home_cache /dev/mapper/cryptroot /mnt/home/.cache
+
 mount --mkdir /dev/sda2 /mnt/boot
 ```
+
+- `compress=no` is used for select high-churn subvolumes (these also happen to be separated out from snapshots of `/` and `/home`)
 
 
 ## 7. Base System Installation
