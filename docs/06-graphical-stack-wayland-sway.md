@@ -196,8 +196,8 @@ At this stage in the system installation, the base installation, internal recove
 
 Create read-only `@` and `@home` snapshots named `06-graphical-stack`:
 ```bash
-btrfs subvolume snapshot -r / /.root-milestone-snapshots/06-graphical-stack
-btrfs subvolume snapshot -r /home /.home-milestone-snapshots/06-graphical-stack
+btrfs subvolume snapshot -r / /.milestone-snapshots/06-graphical-stack
+btrfs subvolume snapshot -r /home /.milestone-snapshots/06-graphical-stack
 ```
 
 - This is the first milestone where a `@home` milestone snapshot is also recommended. The graphical stack developed here stores configs and dotfiles in the users home directory
