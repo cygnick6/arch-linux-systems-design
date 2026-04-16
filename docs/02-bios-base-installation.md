@@ -130,11 +130,9 @@ An overview of the mount options used:
 - `compress=no` - the transient contents of the `@var/` subvolumes are not worth compressing
 - `subvol=` - subvolume to mount from `/dev/mapper/cryptroot`
 
-Unmount the file system and mount the `BIOS Boot Partition` along with the subvolumes using mount options:
+Unmount the file system and mount the subvolumes using mount options, followed by the `BIOS Boot Partition`:
 ```bash
 umount /mnt
-
-mount --mkdir /dev/sda2 /mnt/boot
 
 mount -o noatime,compress=zstd,subvol=@ /dev/mapper/cryptroot /mnt
 mount --mkdir -o noatime,compress=zstd,subvol=@home /dev/mapper/cryptroot /mnt/home
@@ -153,6 +151,8 @@ mount --mkdir -o noatime,compress=no,subvol=@var_lib /dev/mapper/cryptroot /mnt/
 mount --mkdir -o noatime,compress=no,subvol=@var_log /dev/mapper/cryptroot /mnt/var/log
 mount --mkdir -o noatime,compress=no,subvol=@var_spool /dev/mapper/cryptroot /mnt/var/spool
 mount --mkdir -o noatime,compress=no,subvol=@var_tmp /dev/mapper/cryptroot /mnt/var/tmp
+
+mount --mkdir /dev/sda2 /mnt/boot
 ```
 
 
