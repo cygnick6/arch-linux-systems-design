@@ -107,7 +107,7 @@ notify "Manual backup requested"
 ################################################################################
 
 validate_user_name_conf
-validate_backup_uuid_conf
+validate_high_priority_conf
 
 ################################################################################
 # CHECK IF EXECUTED AS ROOT

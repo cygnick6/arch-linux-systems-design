@@ -107,7 +107,7 @@ log_declare "usb-backup-reminder.sh started"
 ################################################################################
 
 validate_user_name_conf
-validate_backup_uuid_conf
+validate_high_priority_conf
 
 ################################################################################
 # CREATE FLAG FILE backup-due
