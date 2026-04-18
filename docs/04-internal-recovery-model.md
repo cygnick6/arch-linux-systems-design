@@ -255,8 +255,7 @@ cryptsetup open /dev/sdX# cryptroot
 
 3. Create a mount point and mount the system’s top-level subvolume:
 ```bash
-mkdir /mnt/btrfs
-mount /dev/mapper/cryptroot /mnt/btrfs
+mount --mkdir /dev/mapper/cryptroot /mnt/btrfs
 ```
 
 4. Inspect and choose an existing `Snapper` `@` snapshot to use for the rollback:
@@ -269,7 +268,6 @@ ls /mnt/btrfs/@root_snapshots
 Each `Snapper` `@` snapshot has the structure:
 ```
 /.snapshots/<Number>/snapshot
-
 ```
 
 To help with choosing a `@` to rollback to, consider inspecting its contents:
@@ -279,11 +277,14 @@ ls /mnt/btrfs/.snapshots/<Snapshot-Number-to-Inspect>/snapshot
 
 - Also consider utilizing `grub-btrfs` to temporarily boot into a `@` snapshot and inspect in that way
 
-5. Preserve the current `@` subvolume:
+5. Remove the current `@` subvolume:
 
-Optionally rename the current `@` subvolume `@broken` or similar for safety or for future inspection (it will be overwritten otherwise):
+The current `@` subvolume must be renamed or deleted.
+
+Rename the current `@` subvolume `@broken` or similar for safety or for future inspection:
 ```bash
-mv /mnt/btrfs/@ /mnt/btrfs/@_broken
+ts=$(date +"%Y%m%d-%H%M%S")
+mv /mnt/btrfs/@ /mnt/btrfs/@_broken_$ts
 ```
 
 6. Replace the current `@` subvolume:
@@ -311,7 +312,7 @@ mount -o subvol=@ /dev/mapper/cryptroot /mnt
 mount --mkdir -o subvol=@home /dev/mapper/cryptroot /mnt/home
 ```
 
-10. Mount the boot partition, replacing `#` with either the BIOS boot (or EFI system partition:
+10. Mount the `/boot`, replacing `#` with the partition containing `/boot`:
 ```bash
 mount --mkdir /dev/sdX# /mnt/boot
 ```
@@ -320,10 +321,6 @@ mount --mkdir /dev/sdX# /mnt/boot
 
 11. Chroot into the restored system:
 ```bash
-mount --bind /dev /mnt/dev
-mount --bind /proc /mnt/proc
-mount --bind /sys /mnt/sys
-mount --bind /run /mnt/run
 arch-chroot /mnt
 ```
 
@@ -370,44 +367,52 @@ By creating a milestone snapshot of `@` now, an extra degree of freedom is affor
 
 `Snapper` will not be used to manage root milestone snapshots to avoid `Snapper`’s automated cleanup.
 
-### 5.1 Create Internal Root Milestone Snapshot
+### 5.1 Create Internal Milestone Snapshots
 
-Create a read-only `@` snapshot named `04-internal-recovery`:
+Create read-only snapshots named `04-internal-recovery`:
 ```bash
 btrfs subvolume snapshot -r / /.milestone-snapshots/04-internal-recovery
 btrfs subvolume snapshot -r /home /home/.milestone-snapshots/04-internal-recovery
 ```
 
-### 5.2 Root Milestone Rollback
+### 5.2 Milestone Rollback
 
-The `/` file system (not including any subvolume or contained file system other than `@`) may be restored to the `04-internal-recovery` snapshot.
+The file system (not including any subvolume or contained file system other than `@` and `@home`) may be restored to the `04-internal-recovery` system state.
 
-To do so, perform an [Offline Root Rollback](###4.2-Offline-Rollback), sourcing the snapshot to rollback to from `@root_milestone_snapshots` rather than the `Snapper` managed `@root_snapshots`.
+To do so, perform an offline rollback of both `@` and `@home`. Refer to the [Offline Root Rollback](###4.2-Offline-Rollback) section, sourcing the snapshots to rollback to from `@root_milestone_snapshots` and `@home_milestone_snapshots`.
 
-Explicitly, follow the entire [Offline Root Rollback](###4.2-Offline-Rollback) section, but replace key steps **4.**, **5.**, and **6.** with:
+Explicitly, follow the entire [Offline Root Rollback](###4.2-Offline-Rollback) section, operating on both `@` and `@home`, and replace key steps **4.**, **5.**, and **6.** with:
 
 4. Inspect and choose an existing `@` snapshot to use for the rollback:
 
 Inspect available `@` milestone snapshots:
 ```bash
-ls /mnt/btrfs/@root_milestone_snapshots
+btrfs subvolume list /mnt/btrfs/@root_milestone_snapshots
 ```
 
 Inspect a specific `@` milestone snapshot (`04-internal-recovery` or other):
 ```bash
+btrfs subvolume show /mnt/btrfs/@root_milestone_snapshots/04-internal-recovery
 ls /mnt/btrfs/@root_milestone_snapshots/04-internal-recovery
 ```
 
 - `grub-btrfs` was configured to also allow temporary boots into root milestone snapshots for inspection
 
-5. Optionally preserve the current `@` subvolume (same as in original [Offline Root Rollback](###4.2-Offline-Rollback) section).
+5. Preserve or delete the current `@` subvolume:
+
+Rename the current `@` and `@home` subvolumes `@broken` or similar for safety or for future inspection:
+```bash
+ts=$(date +"%Y%m%d-%H%M%S")
+mv /mnt/btrfs/@ /mnt/btrfs/@_broken_$ts
+mv /mnt/btrfs/@home /mnt/btrfs/@home_broken_$ts
+```
 
 6. Replace the current `@` subvolume:
 
 Rollback the current `@` to the target snapshot (`04-internal-recovery` or other):
 ```bash
 btrfs subvolume snapshot \
-    /mnt/btrfs/.root-milestone-snapshots/04-internal-recovery \
+    /mnt/btrfs/@root_milestone_snapshots/04-internal-recovery \
     /mnt/btrfs/@
 ```
 
