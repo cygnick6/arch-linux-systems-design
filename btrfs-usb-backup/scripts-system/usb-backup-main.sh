@@ -135,6 +135,8 @@ cleanup_handler() {
     umount "$ROOT_SUBVOL_RUN_MOUNTPOINT" 2>/dev/null || true
     umount "$HOME_SUBVOL_RUN_MOUNTPOINT" 2>/dev/null || true
 
+    rm "$BACKUP_IN_PROGRESS_FLAG" "$SCRUB_IN_PROGRESS_FLAG"
+
     log "Finished cleanup"
     log_declare "usb-backup-main.sh exited with errors"
 
@@ -264,7 +266,8 @@ log "Creating new local snapshots: $_SNAPSHOT_NAME"
 btrfs subvolume snapshot -r "$ROOT_SUBVOL_RUN_MOUNTPOINT" "$_ROOT_SNAP"
 btrfs subvolume snapshot -r "$HOME_SUBVOL_RUN_MOUNTPOINT" "$_HOME_SNAP"
 
-btrfs filesystem sync "$BTRFS_SOURCE_DEVICE"
+btrfs filesystem sync "$ROOT_SUBVOL_RUN_MOUNTPOINT"
+btrfs filesystem sync "$HOME_SUBVOL_RUN_MOUNTPOINT"
 
 umount "$ROOT_SUBVOL_RUN_MOUNTPOINT"
 umount "$HOME_SUBVOL_RUN_MOUNTPOINT"

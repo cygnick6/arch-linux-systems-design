@@ -544,7 +544,9 @@ mount_subvol() {
 
     fi
 
-    if ! findmnt -n -o OPTIONS "$mountpoint" | grep -q "subvol=$subvol"; then
+    local opts=$(findmnt -n -o OPTIONS "$mountpoint")
+
+    if ! grep -Eq "(^|,)subvol=/?$subvol(,|$)" <<< "$opts"; then
 
         error "Mounted subvolume is not $subvol"
         return 1
