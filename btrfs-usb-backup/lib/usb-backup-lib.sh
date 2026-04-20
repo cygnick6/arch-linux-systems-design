@@ -147,7 +147,7 @@ validate_user_name_conf () {
              configure USER_NAME for notifications"
         error "Manual configuration of usb-backup.conf required - \
                configure USER_NAME for notifications"
-        exit 1
+        return 1
 
     fi
 
@@ -166,7 +166,7 @@ validate_high_priority_conf () {
         error "Manual configuration of usb-backup.conf required - \
                configure BACKUP_UUID"
         notify "Manual config needed in usb-backup.conf"
-        exit 1
+        return 1
 
     fi
 
@@ -174,7 +174,7 @@ validate_high_priority_conf () {
         "/"|"/home"|"/var"|"/usr"|"/etc")
 
             error "Unsafe MOUNTPOINT configured"
-            exit 1
+            return 1
 
             ;;
 
@@ -278,7 +278,7 @@ detect_usb_drive() {
 
         fi
 
-        exit 1
+        return 1
 
     fi
 
@@ -294,7 +294,7 @@ detect_usb_drive() {
 
         fi
 
-        exit 1
+        return 1
 
     fi
 
@@ -332,7 +332,7 @@ mount_usb_drive() {
         if ! mount -o noatime UUID="$BACKUP_UUID" "$MOUNTPOINT"; then
 
             error "Mount command failed"
-            exit 1
+            return 1
 
         fi
 
@@ -349,14 +349,14 @@ mount_usb_drive() {
     if [[ "$_MOUNTED_UUID" != "$BACKUP_UUID" ]]; then
 
         error "Wrong device mounted at $MOUNTPOINT (UUID mismatch)"
-        exit 1
+        return 1
 
     fi
 
     if [[ "$_MOUNTED_FSTYPE" != "btrfs" ]]; then
 
         error "Mounted filesystem is not Btrfs"
-        exit 1
+        return 1
 
     fi
 
@@ -367,7 +367,7 @@ mount_usb_drive() {
     if ! touch "$test_file"; then
 
         error "Write test failed on mounted filesystem"
-        exit 1
+        return 1
 
     fi
 
@@ -386,6 +386,7 @@ mount_usb_drive() {
 ################################################################################
 
 create_destination() {
+
     local su="$1"
 
     if btrfs subvolume show "$su" &>/dev/null; then
@@ -397,11 +398,12 @@ create_destination() {
     if [[ -e "$su" ]]; then
 
         error "Path exists but is not a subvolume: $su"
-        exit 1
+        return 1
 
     fi
 
     btrfs subvolume create "$su"
+
 }
 
 ################################################################################
@@ -409,13 +411,14 @@ create_destination() {
 ################################################################################
 
 reset_staging_dir() {
+
     local dir="$1"
 
     log "Resetting staging subvolume: $dir"
 
     if [[ -e "$dir" ]] && ! btrfs subvolume show "$dir" &>/dev/null; then
         error "Staging path exists but is not a subvolume: $dir"
-        exit 1
+        return 1
     fi
 
     if btrfs subvolume show "$dir" &>/dev/null; then
@@ -430,7 +433,7 @@ reset_staging_dir() {
             if [[ "$full_path" != "$MOUNTPOINT"* ]]; then
 
                 error "Refusing unsafe subvolume delete: $full_path"
-                exit 1
+                return 1
 
             fi
 
@@ -438,7 +441,7 @@ reset_staging_dir() {
 
             btrfs subvolume delete "$full_path" || {
                 error "Failed deleting subvolume: $full_path"
-                exit 1
+                return 1
             }
         done < <(
             btrfs subvolume list -o "$dir" \
@@ -451,7 +454,7 @@ reset_staging_dir() {
             *)
 
                 error "Refusing to operate outside mountpoint: $dir"
-                exit 1
+                return 1
 
                 ;;
 
@@ -461,7 +464,7 @@ reset_staging_dir() {
 
         btrfs subvolume delete "$dir" || {
             error "Failed deleting staging subvolume: $dir"
-            exit 1
+            return 1
         }
 
         for i in {1..50}; do
@@ -479,7 +482,7 @@ reset_staging_dir() {
         if btrfs subvolume show "$dir" &>/dev/null; then
 
             error "Staging subvolume deletion did not complete"
-            exit 1
+            return 1
 
         fi
 
@@ -487,12 +490,13 @@ reset_staging_dir() {
 
     btrfs subvolume create "$dir" || {
         error "Failed to create staging subvolume: $dir"
-        exit 1
+        return 1
     }
 
     btrfs filesystem sync "$MOUNTPOINT"
 
     log "Staging reset complete: $dir"
+
 }
 
 ################################################################################
@@ -508,7 +512,7 @@ mount_subvol() {
     if mountpoint -q "$mountpoint"; then
 
         error "Mountpoint already in use: $mountpoint"
-        exit 1
+        return 1
 
     fi
 
@@ -517,7 +521,7 @@ mount_subvol() {
         *)
 
             error "Invalid subvol: $subvol"
-            exit 1
+            return 1
 
             ;;
 
@@ -526,21 +530,24 @@ mount_subvol() {
     if ! mount -o subvol="$subvol" "$source_device" "$mountpoint"; then
 
         error "Failed to mount $subvol subvolume"
-        exit 1
+        return 1
 
     fi
 
-    if ! findmnt -n -o SOURCE "$mountpoint" | grep -qx "$source_device"; then
+    local mounted_source=$(findmnt -n -o SOURCE "$mountpoint")
+    local mounted_device="${mounted_source%%[*}"
+
+    if [[ "$mounted_device" != "$source_device" ]]; then
 
         error "Mounted $subvol is not from expected device $source_device"
-        exit 1
+        return 1
 
     fi
 
     if ! findmnt -n -o OPTIONS "$mountpoint" | grep -q "subvol=$subvol"; then
 
         error "Mounted subvolume is not $subvol"
-        exit 1
+        return 1
 
     fi
 
@@ -581,7 +588,7 @@ runtime_mount_check() {
     if [[ "$uuid" != "$BACKUP_UUID" ]]; then
 
         error "Mounted filesystem UUID mismatch during runtime"
-        exit 1
+        return 1
 
     fi
 
@@ -589,7 +596,7 @@ runtime_mount_check() {
 
         error "Refusing to operate: $MOUNTPOINT \
             is not a mounted Btrfs filesystem"
-        exit 1
+        return 1
 
     fi
 
@@ -721,7 +728,7 @@ unmount_usb_drive() {
 
                     fi
 
-                    exit 1
+                    return 1
 
                 fi
 
