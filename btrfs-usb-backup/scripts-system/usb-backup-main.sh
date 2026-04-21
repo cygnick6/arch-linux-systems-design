@@ -131,9 +131,9 @@ cleanup_handler() {
 
     log "Starting cleanup"
 
+    umount "$TOP_LEVEL_SOURCE_MOUNTPOINT" 2>/dev/null || true
+
     unmount_usb_drive
-    umount "$ROOT_SUBVOL_RUN_MOUNTPOINT" 2>/dev/null || true
-    umount "$HOME_SUBVOL_RUN_MOUNTPOINT" 2>/dev/null || true
 
     rm "$BACKUP_IN_PROGRESS_FLAG" "$SCRUB_IN_PROGRESS_FLAG"
 
@@ -251,8 +251,21 @@ fi
 # CREATE NEW LOCAL SNAPSHOTS
 ################################################################################
 
-mount_subvol "@" "$BTRFS_SOURCE_DEVICE" "$ROOT_SUBVOL_RUN_MOUNTPOINT"
-mount_subvol "@home" "$BTRFS_SOURCE_DEVICE" "$HOME_SUBVOL_RUN_MOUNTPOINT"
+if mountpoint -q "$TOP_LEVEL_SOURCE_MOUNTPOINT"; then
+
+    error "Top-level source mountpoint already in use"
+    exit 1
+
+fi
+
+mount -o subvolid=5 "$BTRFS_SOURCE_DEVICE" "$TOP_LEVEL_SOURCE_MOUNTPOINT"
+
+if ! mountpoint -q "$TOP_LEVEL_SOURCE_MOUNTPOINT"; then
+
+    error "Failed to mount top-level source subvolume"
+    exit 1
+
+fi
 
 # Do not edit needlessly
 # Backup system relies on inherent sorting and atomicity
@@ -263,16 +276,14 @@ _HOME_SNAP="$LOCAL_HOME_SNAP_DIR/$_SNAPSHOT_NAME"
 
 log "Creating new local snapshots: $_SNAPSHOT_NAME"
 
-btrfs subvolume snapshot -r "$ROOT_SUBVOL_RUN_MOUNTPOINT" "$_ROOT_SNAP"
-btrfs subvolume snapshot -r "$HOME_SUBVOL_RUN_MOUNTPOINT" "$_HOME_SNAP"
+btrfs subvolume snapshot -r "$TOP_LEVEL_SOURCE_MOUNTPOINT"/@ "$_ROOT_SNAP"
+btrfs subvolume snapshot -r "$TOP_LEVEL_SOURCE_MOUNTPOINT"/@home "$_HOME_SNAP"
 
-btrfs filesystem sync "$ROOT_SUBVOL_RUN_MOUNTPOINT"
-btrfs filesystem sync "$HOME_SUBVOL_RUN_MOUNTPOINT"
+btrfs filesystem sync "$BTRFS_SOURCE_DEVICE"
 
-umount "$ROOT_SUBVOL_RUN_MOUNTPOINT"
-umount "$HOME_SUBVOL_RUN_MOUNTPOINT"
+umount "$TOP_LEVEL_SOURCE_MOUNTPOINT"
 
-log "Created new local snapshots: $_SNAPSHOT_NAME"
+log "Finished creating new local snapshots: $_SNAPSHOT_NAME"
 
 ################################################################################
 # FIND PARENT SNAPSHOT FUNCTION

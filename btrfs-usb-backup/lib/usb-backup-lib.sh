@@ -188,13 +188,11 @@ validate_high_priority_conf () {
 
 prepare_local_directories() {
 
-    mkdir -p "$ROOT_SUBVOL_RUN_MOUNTPOINT" "$HOME_SUBVOL_RUN_MOUNTPOINT" \
-             "$LOCK_DIR" "$LOCAL_ROOT_SNAP_DIR" "$LOCAL_HOME_SNAP_DIR" \
-             "$STATE_DIR" "$STATE_COUNTER_DIR" "$STATE_FLAG_DIR" \
-             "$STATE_TIMESTAMP_DIR" "$LOG_DIR"
+    mkdir -p "$TOP_LEVEL_SOURCE_MOUNTPOINT" "$LOCK_DIR" "$LOCAL_ROOT_SNAP_DIR" \
+             "$LOCAL_HOME_SNAP_DIR" "$STATE_DIR" "$STATE_COUNTER_DIR" \
+             "$STATE_FLAG_DIR" "$STATE_TIMESTAMP_DIR" "$LOG_DIR"
 
-    chmod 700 "$ROOT_SUBVOL_RUN_MOUNTPOINT"
-    chmod 700 "$HOME_SUBVOL_RUN_MOUNTPOINT"
+    chmod 700 "$TOP_LEVEL_SOURCE_MOUNTPOINT"
     chmod 700 "$LOCK_DIR"
     chmod 700 "$STATE_DIR"
 
@@ -496,62 +494,6 @@ reset_staging_dir() {
     btrfs filesystem sync "$MOUNTPOINT"
 
     log "Staging reset complete: $dir"
-
-}
-
-################################################################################
-# SUBVOL MOUNT FUNCTION
-################################################################################
-
-mount_subvol() {
-
-    local subvol="$1"
-    local source_device="$2"
-    local mountpoint="$3"
-
-    if mountpoint -q "$mountpoint"; then
-
-        error "Mountpoint already in use: $mountpoint"
-        return 1
-
-    fi
-
-    case "$subvol" in
-        "@"|"@home") ;;
-        *)
-
-            error "Invalid subvol: $subvol"
-            return 1
-
-            ;;
-
-    esac
-
-    if ! mount -o subvol="$subvol" "$source_device" "$mountpoint"; then
-
-        error "Failed to mount $subvol subvolume"
-        return 1
-
-    fi
-
-    local mounted_source=$(findmnt -n -o SOURCE "$mountpoint")
-    local mounted_device="${mounted_source%%[*}"
-
-    if [[ "$mounted_device" != "$source_device" ]]; then
-
-        error "Mounted $subvol is not from expected device $source_device"
-        return 1
-
-    fi
-
-    local opts=$(findmnt -n -o OPTIONS "$mountpoint")
-
-    if ! grep -Eq "(^|,)subvol=/?$subvol(,|$)" <<< "$opts"; then
-
-        error "Mounted subvolume is not $subvol"
-        return 1
-
-    fi
 
 }
 
