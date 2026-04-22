@@ -279,7 +279,7 @@ log "Creating new local snapshots: $_SNAPSHOT_NAME"
 btrfs subvolume snapshot -r "$TOP_LEVEL_SOURCE_MOUNTPOINT"/@ "$_ROOT_SNAP"
 btrfs subvolume snapshot -r "$TOP_LEVEL_SOURCE_MOUNTPOINT"/@home "$_HOME_SNAP"
 
-btrfs filesystem sync "$BTRFS_SOURCE_DEVICE"
+btrfs filesystem sync "$TOP_LEVEL_SOURCE_MOUNTPOINT"
 
 umount "$TOP_LEVEL_SOURCE_MOUNTPOINT"
 
