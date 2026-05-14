@@ -574,7 +574,7 @@ step_start() {
 
 step_end() {
 
-    dir="${1:-}"
+    local dir="${1:-}"
 
     if [[ -n "$dir" ]]; then
 
