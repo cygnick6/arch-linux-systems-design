@@ -135,7 +135,7 @@ cleanup_handler() {
 
     unmount_usb_drive
 
-    rm "$BACKUP_IN_PROGRESS_FLAG" "$SCRUB_IN_PROGRESS_FLAG"
+    rm -f "$BACKUP_IN_PROGRESS_FLAG" "$SCRUB_IN_PROGRESS_FLAG"
 
     log "Finished cleanup"
     log_declare "usb-backup-main.sh exited with errors"
