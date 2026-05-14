@@ -13,8 +13,10 @@
 # - @home receiving is dumped to local HOME_RECEIVE_DUMP_LOG_FILE
 # - Btrfs scrub output is logged to local SCRUB_DUMP_LOG_FILE
 #
-## SCRUB STATUS FILE CONTEXT ##
+## SCRUB STATUS CONTEXT ##
 # - The result of the last successful scrub is saved to LAST_SCRUB_RESULT_FILE
+# - The global variable SCRUB_ERRORS_THIS_RUN is set by scrub_management()
+#       (lib) and is used to ignore stale LAST_SCRUB_RESULT_FILE contents
 #
 ## SOURCING CONTEXT ##
 # This script sources:
@@ -1150,5 +1152,15 @@ if [[ ! -f "$FIRST_BACKUP_SUCCESS_TIMESTAMP_FILE" ]]; then
 
 fi
 
+if [[ "${SCRUB_ERRORS_THIS_RUN:-0}" == 1 ]]; then
+
+    log "Scrub reported errors this backup attempt"
+    notify "Backup completed with warnings from scrub"
+
+else
+
+    notify "Backup completed"
+
+fi
+
 log_declare "usb-backup-main.sh finished"
-notify "Backup completed"

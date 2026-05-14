@@ -694,6 +694,8 @@ unmount_usb_drive() {
 
 scrub_management() {
 
+    SCRUB_ERRORS_THIS_RUN=0
+
     local arg="${1:-}"
 
     local manual=false
@@ -774,6 +776,7 @@ scrub_management() {
             if echo "$error_line" | grep -Eq '=[1-9]'; then
 
                 echo "ERRORS DETECTED" > "$LAST_SCRUB_RESULT_FILE"
+                SCRUB_ERRORS_THIS_RUN=1
                 log "Scrub completed successfully"
                 log "Scrub status: ERRORS DETECTED"
                 error "Scrub status: ERRORS DETECTED"
