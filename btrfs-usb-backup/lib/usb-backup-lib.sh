@@ -600,89 +600,144 @@ step_end() {
 }
 
 ################################################################################
-# UNMOUNT FUNCTION
+# BTRFS SEND | RECEIVE PIPELINE
 ################################################################################
 
-unmount_usb_drive() {
+btrfs_send_receive_pipeline() {
 
-    local arg="${1:-}"
+    local parent="${1:-}"
+    local kind="${2:-}"
 
-    local manual=false
-    if [[ "$arg" == "manual" ]]; then
+    local staging_dir
+    local dump_log
+    local source_snap
+    local snapshot_tag
 
-        manual=true
+    case "$kind" in
+        root)
+
+            staging_dir="$DEST_ROOT_SNAP_STAGING_DIR"
+            dump_log="$ROOT_RECEIVE_DUMP_LOG_FILE"
+            source_snap="$_ROOT_SNAP"
+            snapshot_tag="@"
+
+            ;;
+
+        home)
+
+            staging_dir="$DEST_HOME_SNAP_STAGING_DIR"
+            dump_log="$HOME_RECEIVE_DUMP_LOG_FILE"
+            source_snap="$_HOME_SNAP"
+            snapshot_tag="@home"
+
+            ;;
+
+        *)
+
+            error "btrfs_send_receive_pipeline: invalid kind (expected root or home): $kind"
+            exit 1
+
+            ;;
+
+    esac
+
+    local use_dump=false
+
+    if [[ "$LOG_TO_FILE" == "true" ]] && \
+       [[ "$LOG_FILE_RECEIVE_DUMP" == "true" ]]; then
+
+        use_dump=true
 
     fi
 
-    log "Attempting to unmount target USB"
+    local step_desc
 
-    if mountpoint -q "$MOUNTPOINT"; then
+    if [[ -n "$parent" ]]; then
 
-        if umount "$MOUNTPOINT"; then
+        if [[ "$use_dump" == true ]]; then
 
-            log "Backup drive unmounted successfully"
-            notify "Unmount successful"
-
-            if [[ "$manual" == "true" ]]; then
-
-                printf "Backup drive unmounted successfully\n"
-
-            fi
+            step_desc="Transmit staged $snapshot_tag incrementally (logged)"
 
         else
 
-            log "Backup drive busy - attempting again"
-
-            sleep 1
-
-            if umount "$MOUNTPOINT"; then
-
-                log "Backup drive unmounted successfully - second attempt"
-
-                if [[ "$manual" == "true" ]]; then
-
-                    printf "Backup drive unmounted successfully - second attempt\n"
-
-                fi
-
-            else
-
-                log "Backup drive busy - attempting lazy unmount"
-
-                if umount -l "$MOUNTPOINT"; then
-
-                    log "Lazy unmount successful - \
-                         two failed normal unmount attempts prior"
-
-                    if [[ "$manual" == "true" ]]; then
-
-                        printf "Backup drive unmounted lazily - \
-                                two failed normal unmount attempts prior\n"
-
-                    fi
-
-                else
-
-                    error "Failed to unmount backup drive"
-                    notify "Unmount failed"
-
-                    if [[ "$manual" == "true" ]]; then
-
-                        printf "Error: failed to unmount backup drive\n"
-
-                    fi
-
-                    return 1
-
-                fi
-
-            fi
+            step_desc="Transmit staged $snapshot_tag incrementally"
 
         fi
 
     else
 
-        log "No device mounted at "$MOUNTPOINT" - skipping unmount"
+        if [[ "$use_dump" == true ]]; then
+
+            step_desc="Transmit staged $snapshot_tag fully (logged)"
+
+        else
+
+            step_desc="Transmit staged $snapshot_tag fully"
+
+        fi
+
+    fi
+
+    step_start "$step_desc" "$MOUNTPOINT"
+
+    set +e
+
+    if [[ "$use_dump" == true ]]; then
+
+        if [[ -n "$parent" ]]; then
+
+            btrfs send --compressed-data -p "$parent" "$source_snap" | \
+            btrfs receive --dump >> "$dump_log" 2>&1
+
+        else
+
+            btrfs send --compressed-data "$source_snap" | \
+            btrfs receive --dump >> "$dump_log" 2>&1
+
+        fi
+
+    else
+
+        if [[ -n "$parent" ]]; then
+
+            btrfs send --compressed-data -p "$parent" "$source_snap" | \
+            btrfs receive "$staging_dir"
+
+        else
+
+            btrfs send --compressed-data "$source_snap" | \
+            btrfs receive "$staging_dir"
+
+        fi
+
+    fi
+
+    local ps=("${PIPESTATUS[@]}")
+    local rc1=${ps[0]:-1}
+    local rc2=${ps[1]:-1}
+
+    set -e
+
+    step_end "$staging_dir"
+
+    if (( rc1 == 0 && rc2 == 0 )); then
+
+        log "STEP SUCCESS | $_STEP_DESC | duration=${_STEP_DURATION}s"
+
+    else
+
+        error "STEP FAIL    | $_STEP_DESC | send_rc=$rc1 recv_rc=$rc2 | duration=${_STEP_DURATION}s"
+        exit 1
+
+    fi
+
+    if [[ -n "$parent" ]]; then
+
+        log "Finished staged $snapshot_tag incremental send: $_SNAPSHOT_NAME"
+
+    else
+
+        log "Finished staged $snapshot_tag full send: $_SNAPSHOT_NAME"
 
     fi
 
@@ -815,6 +870,95 @@ scrub_management() {
     fi
 
     rm -f "$SCRUB_IN_PROGRESS_FLAG"
+
+}
+
+################################################################################
+# UNMOUNT FUNCTION
+################################################################################
+
+unmount_usb_drive() {
+
+    local arg="${1:-}"
+
+    local manual=false
+    if [[ "$arg" == "manual" ]]; then
+
+        manual=true
+
+    fi
+
+    log "Attempting to unmount target USB"
+
+    if mountpoint -q "$MOUNTPOINT"; then
+
+        if umount "$MOUNTPOINT"; then
+
+            log "Backup drive unmounted successfully"
+            notify "Unmount successful"
+
+            if [[ "$manual" == "true" ]]; then
+
+                printf "Backup drive unmounted successfully\n"
+
+            fi
+
+        else
+
+            log "Backup drive busy - attempting again"
+
+            sleep 1
+
+            if umount "$MOUNTPOINT"; then
+
+                log "Backup drive unmounted successfully - second attempt"
+
+                if [[ "$manual" == "true" ]]; then
+
+                    printf "Backup drive unmounted successfully - second attempt\n"
+
+                fi
+
+            else
+
+                log "Backup drive busy - attempting lazy unmount"
+
+                if umount -l "$MOUNTPOINT"; then
+
+                    log "Lazy unmount successful - \
+                         two failed normal unmount attempts prior"
+
+                    if [[ "$manual" == "true" ]]; then
+
+                        printf "Backup drive unmounted lazily - \
+                                two failed normal unmount attempts prior\n"
+
+                    fi
+
+                else
+
+                    error "Failed to unmount backup drive"
+                    notify "Unmount failed"
+
+                    if [[ "$manual" == "true" ]]; then
+
+                        printf "Error: failed to unmount backup drive\n"
+
+                    fi
+
+                    return 1
+
+                fi
+
+            fi
+
+        fi
+
+    else
+
+        log "No device mounted at "$MOUNTPOINT" - skipping unmount"
+
+    fi
 
 }
 
