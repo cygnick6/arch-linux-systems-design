@@ -953,10 +953,18 @@ prune_paired() {
 
         log "Deleting paired snapshot $snap"
 
-        if [[ -d "$remote_dir/$snap" ]]; then
+        if btrfs subvolume show "$remote_dir/$snap"; then
 
             btrfs subvolume delete -c "$remote_dir/$snap" \
                 || error "Failed deleting remote snapshot $snap"
+
+        fi
+
+        if btrfs subvolume show "$remote_dir/$snap"; then
+
+            error "Remote (paired) snapshot still present after delete \
+                   attempt: $snap - exiting"
+            exit 1
 
         fi
 
@@ -964,6 +972,15 @@ prune_paired() {
 
             btrfs subvolume delete -c "$local_dir/$snap" \
                 || error "Failed deleting local snapshot $snap"
+
+        fi
+
+        if btrfs subvolume show "$local_dir/$snap"; then
+
+            error "Local (paired) snapshot still present after delete attempt: \
+                   $snap - exiting"
+            exit 1
+
         fi
 
     done
@@ -1035,8 +1052,20 @@ prune_unpaired() {
 
         log "Deleting unpaired snapshot $snap"
 
-        btrfs subvolume delete -c "$target_dir/$snap" \
-            || error "Failed deleting unpaired snapshot $snap"
+        if btrfs subvolume show "$target_dir/$snap"; then
+
+            btrfs subvolume delete -c "$target_dir/$snap" \
+                || error "Failed deleting unpaired snapshot $snap"
+
+        fi
+
+        if btrfs subvolume show "$target_dir/$snap"; then
+
+            error "Unpaired snapshot still present after delete attempt: $snap \
+                   - exiting"
+            exit 1
+
+        fi
 
     done
 
