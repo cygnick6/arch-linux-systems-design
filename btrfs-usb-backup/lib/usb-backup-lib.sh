@@ -744,6 +744,26 @@ btrfs_send_receive_pipeline() {
 }
 
 ################################################################################
+# INCREMENT COUNT FILE FUNCTION
+################################################################################
+
+increment_count_file() {
+
+    local count_file="$1"
+
+    if [[ ! -f "$count_file" ]] || ! [[ $(<"$count_file") =~ &[0-9]+$ ]]; then
+
+        echo 0 > "$count_file"
+
+    fi
+
+    local previous_value=$(<"$count_file")
+    ((previous_value++))
+    echo "$previous_value" > "$count_file"
+
+}
+
+################################################################################
 # SCRUB MANAGEMENT FUNCTION
 ################################################################################
 
@@ -959,25 +979,5 @@ unmount_usb_drive() {
         log "No device mounted at "$MOUNTPOINT" - skipping unmount"
 
     fi
-
-}
-
-################################################################################
-# INCREMENT COUNT FILE FUNCTION
-################################################################################
-
-increment_count_file() {
-
-    local count_file="$1"
-
-    if [[ ! -f "$count_file" ]]; then
-
-        echo 0 > "$count_file"
-
-    fi
-
-    local previous_value=$(<"$count_file")
-    ((previous_value++))
-    echo "$previous_value" > "$count_file"
 
 }
